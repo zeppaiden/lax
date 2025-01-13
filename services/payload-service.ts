@@ -257,18 +257,23 @@ export class PayloadService {
     }
   }
 
-  async signedPayload(
-    payload_id: string
-  ): Promise<Result<string>> {
+  async signedPayload(payload_id: string): Promise<Result<string>> {
     try {
       const payload = await this.selectPayload(payload_id)
-
+      
+      // Add this logging
+      console.log('Retrieved payload:', payload)
+      
       if (!payload.success || !payload.content) {
+        console.error('Failed to get payload:', payload.failure)
         return {
           success: false,
           failure: payload.failure
         }
       }
+
+      // Add this logging
+      console.log('Attempting to create signed URL with path:', payload.content.path)
 
       const { data, error } = await this.supabase
         .storage
@@ -278,6 +283,7 @@ export class PayloadService {
         })
 
       if (error) {
+        console.error('Signed URL error:', error)
         return {
           success: false,
           failure: {
@@ -288,11 +294,15 @@ export class PayloadService {
         }
       }
 
+      // Add this logging
+      console.log('Successfully created signed URL:', data.signedUrl)
+
       return {
         success: true,
         content: data.signedUrl
       }
     } catch (error) {
+      console.error('Unexpected error:', error)
       return {
         success: false,
         failure: {
@@ -303,6 +313,7 @@ export class PayloadService {
       }
     }
   }
+
 
   private getPayloadType(file: File): PayloadType {
     const type = file.type.split('/')[0].toLowerCase()
@@ -320,6 +331,8 @@ export class PayloadService {
   ): Promise<Result<{ path: string }>> {
     try {
       const path = `${channel_id}/${file.name}`
+      console.log('Attempting to upload file to path:', path)
+      
       const { data, error } = await this.supabase
         .storage
         .from('payloads')
@@ -328,6 +341,7 @@ export class PayloadService {
         })
 
       if (error) {
+        console.error('Upload error:', error)
         return {
           success: false,
           failure: {
@@ -338,11 +352,16 @@ export class PayloadService {
         }
       }
 
+      // Add this logging
+      console.log('Upload successful. Received data:', data)
+      console.log('Stored path will be:', data.path)
+
       return {
         success: true,
         content: { path: data.path }
       }
     } catch (error) {
+      console.error('Upload error:', error)
       return {
         success: false,
         failure: {
