@@ -17,6 +17,7 @@ interface FileUpload {
   file: File;
   uploading: boolean;
   path?: string;
+  originalName?: string;
 }
 
 export function MessageInputArea({ account, channel_id }: MessageInputAreaProps) {
@@ -37,7 +38,6 @@ export function MessageInputArea({ account, channel_id }: MessageInputAreaProps)
 
     setFiles(prev => [...prev, ...newFiles])
 
-    // Upload each file with loading toast
     for (const fileUpload of newFiles) {
       const toastId = toast.loading(`Uploading ${fileUpload.file.name}...`)
 
@@ -56,10 +56,15 @@ export function MessageInputArea({ account, channel_id }: MessageInputAreaProps)
           continue
         }
 
-        toast.success(`Uploaded ${fileUpload.file.name}`, { id: toastId })
         setFiles(prev => prev.map(f => 
-          f === fileUpload ? { ...f, uploading: false, path: result.content?.path } : f
+          f === fileUpload ? { 
+            ...f, 
+            uploading: false, 
+            path: result.content?.path,
+            originalName: fileUpload.file.name
+          } : f
         ))
+        toast.success(`Uploaded ${fileUpload.file.name}`, { id: toastId })
       } catch (error) {
         toast.error(`Failed to upload ${fileUpload.file.name}`, { id: toastId })
         setFiles(prev => prev.filter(f => f !== fileUpload))

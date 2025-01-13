@@ -273,7 +273,9 @@ export class PayloadService {
       const { data, error } = await this.supabase
         .storage
         .from(this.STORAGE_BUCKET)
-        .createSignedUrl(payload.content.path, 60 * 60)
+        .createSignedUrl(payload.content.path, 3600, {
+          download: true
+        })
 
       if (error) {
         return {
