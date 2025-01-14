@@ -91,11 +91,10 @@ export function MessageBubbleItem({
     console.log('MessageBubbleItem useEffect triggered:', {
       message: message,
       isRobot: message_account?.robot,
-      isWhisper: message.channel_id.includes('whisper'),
       message_id: message.message_id
     });
 
-    if (!message_account?.robot && message.channel_id.includes('whisper')) {
+    if (!message_account?.robot) {
       console.log('Triggering AI response for message:', {
         channel_id: message.channel_id,
         content: message.content,
