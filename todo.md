@@ -235,6 +235,7 @@
 - [ ] Add a proper loading screen/effect when rendering the page for the first time
 
 ## Bugs
+- [ ] When first loading the page, the networks list glitches out and keeps switching the networks order
 - [ ] Only allow N number of payloads to be attached to a message
 - [ ] The selected network and channel should be distinguishable from the other networks and channels
 - [ ] Should be able to send an empty message with a payload

@@ -68,10 +68,31 @@ export async function POST(request: Request) {
             .join('\n');
         console.log('Formatted context:', context);
 
+        const { data: previous_messages, error: previous_messages_error } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('channel_id', channel_id)
+            .order('created_at', { ascending: false })
+            .limit(15);
+
+        if (previous_messages_error) {
+            console.error('Error fetching previous messages:', previous_messages_error);
+            return NextResponse.json(
+                { success: false, error: 'Error fetching previous messages' },
+                { status: 500 }
+            );
+        }
+
+        const formattedMessages = previous_messages
+            .reverse() // Reverse to get chronological order
+            .map((message: any) => `${message.role === 'assistant' ? 'Deadpool' : 'User'}: ${message.content}`)
+            .join('\n\n');
+
         const formattedPrompt = await ragPromptTemplate.format({
             context,
             question: content,
-            character: 'Deadpool'
+            character: 'Deadpool',
+            previous_messages: formattedMessages
         });
         console.log('Formatted prompt:', formattedPrompt);
         const response = await chatModel.invoke(formattedPrompt, {
