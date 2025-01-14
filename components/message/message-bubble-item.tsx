@@ -30,9 +30,9 @@ interface MessageBubbleItemProps {
 }
 
 export function MessageBubbleItem({ 
+  message, 
   current_account, 
   message_account, 
-  message 
 }: MessageBubbleItemProps) {
   const { service_manager } = useServiceContext()
   const [signed_payloads, setSignedPayloads] = React.useState<Record<string, string>>({})
