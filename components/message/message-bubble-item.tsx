@@ -88,6 +88,12 @@ export function MessageBubbleItem({
   }
 
   useEffect(() => {
+    console.log('MessageBubbleItem useEffect triggered:', {
+      isRobot: message_account?.robot,
+      isWhisper: message.channel_id.includes('whisper'),
+      message_id: message.message_id
+    });
+
     if (!message_account?.robot && message.channel_id.includes('whisper')) {
       console.log('Triggering AI response for message:', {
         channel_id: message.channel_id,
@@ -105,7 +111,7 @@ export function MessageBubbleItem({
         }
       });
     }
-  }, [message.message_id]);
+  }, [message.message_id, message.channel_id, message.content, message_account, service_manager]);
 
   return (
     <div className="group flex items-start gap-3 p-2">
