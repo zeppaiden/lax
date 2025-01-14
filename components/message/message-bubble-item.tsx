@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { Download, FileIcon, Loader2 } from "lucide-react"
-import { useEffect } from "react";
 
 import { Account, Message } from "@/services/types"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -86,32 +85,6 @@ export function MessageBubbleItem({
       toast.error('Failed to generate download link')
     }
   }
-
-  useEffect(() => {
-    console.log('MessageBubbleItem useEffect triggered:', {
-      message: message,
-      isRobot: message_account?.robot,
-      message_id: message.message_id
-    });
-
-    if (!message_account?.robot) {
-      console.log('Triggering AI response for message:', {
-        channel_id: message.channel_id,
-        content: message.content,
-        message_account
-      });
-      
-      service_manager.messages.createAIResponse(
-        message.channel_id,
-        message.content
-      ).then(result => {
-        console.log('AI response result:', result);
-        if (!result.success) {
-          toast.error('Failed to get AI response');
-        }
-      });
-    }
-  }, [message.message_id, message.channel_id, message.content, message_account, service_manager]);
 
   return (
     <div className="group flex items-start gap-3 p-2">

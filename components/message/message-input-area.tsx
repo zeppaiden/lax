@@ -68,6 +68,26 @@ export function MessageInputArea({ channel_id }: MessageInputAreaProps) {
         return
       }
 
+      console.log('channel_id:', channel_id)
+      console.log('content:', content.trim())
+      console.log('Desired whisper?', channel_id === '43af5688-edee-4203-8f15-b6e773411e7a' ? 'Yes' : 'No')
+      if (channel_id === '43af5688-edee-4203-8f15-b6e773411e7a') {
+        const result = await service_manager.messages.createAIResponse(
+          channel_id,
+          content.trim()
+        )
+        console.log('AI response result:', result)
+
+        if (!result.success) {
+          toast.error('Failed to get AI response', {
+            id: toastId,
+            description: result.failure?.message || "Unknown error"
+          })
+        } else {
+          toast.success('AI response sent', { id: toastId })
+        }
+      }
+
       if (toastId) {
         toast.success('Message sent with files', { id: toastId })
       }
