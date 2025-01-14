@@ -593,7 +593,7 @@ export class MessageService {
       });
 
       // Call the RAG API endpoint
-      const response = await fetch('/api/messages', {
+      const response = await fetch(`${window.location.origin}/api/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
