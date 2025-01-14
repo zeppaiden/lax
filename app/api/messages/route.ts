@@ -20,11 +20,13 @@ const messageSchema = z.object({
 });
 
 export async function POST(request: Request) {
+    console.log('Received RAG request');
     const supabase = await createClient();
 
     try {
         // Validate request body
         const body = await request.json();
+        console.log('Request body:', body);
         const validatedData = messageSchema.parse(body);
         const { channel_id, content } = validatedData;
 
@@ -83,9 +85,15 @@ export async function POST(request: Request) {
             );
         }
 
+        // Log each major step
+        console.log('Generated embedding');
+        console.log('Pinecone response:', queryResponse);
+        console.log('Generated LLM response:', response);
+
         return NextResponse.json({ success: true, message: messageData });
 
     } catch (error) {
+        console.error('RAG error:', error);
         if (error instanceof z.ZodError) {
             return NextResponse.json(
                 { success: false, error: error.errors },

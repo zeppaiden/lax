@@ -89,10 +89,21 @@ export function MessageBubbleItem({
 
   useEffect(() => {
     if (!message_account?.robot && message.channel_id.includes('whisper')) {
+      console.log('Triggering AI response for message:', {
+        channel_id: message.channel_id,
+        content: message.content,
+        message_account
+      });
+      
       service_manager.messages.createAIResponse(
         message.channel_id,
         message.content
-      );
+      ).then(result => {
+        console.log('AI response result:', result);
+        if (!result.success) {
+          toast.error('Failed to get AI response');
+        }
+      });
     }
   }, [message.message_id]);
 
