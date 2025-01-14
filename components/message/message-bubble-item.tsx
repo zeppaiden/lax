@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Download, FileIcon, Loader2 } from "lucide-react"
+import { useEffect } from "react";
 
 import { Account, Message } from "@/services/types"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -85,6 +86,15 @@ export function MessageBubbleItem({
       toast.error('Failed to generate download link')
     }
   }
+
+  useEffect(() => {
+    if (!message_account?.robot && message.channel_id.includes('whisper')) {
+      service_manager.messages.createAIResponse(
+        message.channel_id,
+        message.content
+      );
+    }
+  }, [message.message_id]);
 
   return (
     <div className="group flex items-start gap-3 p-2">
