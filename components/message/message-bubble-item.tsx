@@ -89,6 +89,7 @@ export function MessageBubbleItem({
 
   useEffect(() => {
     console.log('MessageBubbleItem useEffect triggered:', {
+      message: message,
       isRobot: message_account?.robot,
       isWhisper: message.channel_id.includes('whisper'),
       message_id: message.message_id
