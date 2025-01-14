@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Download, FileIcon, User } from "lucide-react"
+import { Download, FileIcon, Loader2 } from "lucide-react"
 
 import { Account, Message } from "@/services/types"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -34,6 +34,7 @@ export function MessageBubbleItem({
   message 
 }: MessageBubbleItemProps) {
   const { service_manager } = useServiceContext()
+  const [signed_payloads, setSignedPayloads] = React.useState<Record<string, string>>({})
   
   const reactions = React.useMemo(() => {
     if (!message.meta) return [];
@@ -65,6 +66,18 @@ export function MessageBubbleItem({
       toast.success('Reaction toggled successfully')
     } else {
       toast.error('Failed to toggle reaction')
+    }
+  }
+
+  const handlePayloadDownload = async (payload: Payload) => {
+    const result = await service_manager.payloads.signedPayload(payload.path)
+    if (result.success && typeof result.content === 'string') {
+      setSignedPayloads(prev => ({
+        ...prev,
+        [payload.path]: result.content as string
+      }))
+    } else {
+      toast.error('Failed to generate download link')
     }
   }
 
@@ -142,9 +155,23 @@ export function MessageBubbleItem({
                 variant="ghost" 
                 size="icon"
                 asChild
+                disabled={!signed_payloads[payload.path]}
               >
-                <a href={payload.path} download>
-                  <Download className="h-4 w-4" />
+                <a 
+                  href={signed_payloads[payload.path]} 
+                  download={payload.path.split('/').pop()}
+                  onClick={(e) => {
+                    if (!signed_payloads[payload.path]) {
+                      e.preventDefault()
+                      handlePayloadDownload(payload)
+                    }
+                  }}
+                >
+                  {!signed_payloads[payload.path] ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
                 </a>
               </Button>
             </CardContent>

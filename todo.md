@@ -65,8 +65,6 @@
 
 ## General
 
-- [ ] Enable spell check and other features via the TextArea shadcn component
-
 - [ ] Switch to using S3 for payload storage.
   - [ ] The payloads should be stored in the S3 bucket with the path `{network_id}/{channel_id}/{message_id}/{timestamp}.{extension}`
 
@@ -243,7 +241,7 @@
 - [ ] Payloads should be downloadable
   - Currently has a 404 error
 - [ ] Accounts' statuses in the NetworkAccountsList should update in real-time to account status changes
-- [ ] When a new user joins a network, the old messages in the channel are displayed with said user's name, not the user's name who sent the message originally
+- [x] When a new user joins a network, the old messages in the channel are displayed with said user's name, not the user's name who sent the message originally
   - Need to confirm this bug exists
 - [ ] Account's status should immediately be set to online when logging in for the first time
   - This should already be handled by the database having `is_offline` set to `false` by default
