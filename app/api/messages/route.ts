@@ -4,6 +4,7 @@ import { chatModel, ragPromptTemplate } from "@/utils/langchain";
 import { createClient } from '@/utils/supabase/server';
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { z } from "zod";
+import { ServiceManager } from "@/services/service-manager";
 
 const pinecone = new Pinecone({
     apiKey: process.env.PINECONE_API_KEY!,
@@ -11,6 +12,7 @@ const pinecone = new Pinecone({
 
 const embeddings = new OpenAIEmbeddings({
     openAIApiKey: process.env.OPENAI_API_KEY,
+    modelName: "text-embedding-3-small"
 });
 
 // Define request schema
@@ -22,6 +24,7 @@ const messageSchema = z.object({
 export async function POST(request: Request) {
     console.log('Received RAG request');
     const supabase = await createClient();
+    const service_manager = ServiceManager.initialize(supabase);
 
     try {
         // Validate request body
@@ -31,13 +34,13 @@ export async function POST(request: Request) {
         const { channel_id, content } = validatedData;
 
         // Validate channel exists and user has access
-        const { data: channel, error: channelError } = await supabase
+        const { data: channel, error: channel_error } = await supabase
             .from('channels')
             .select('*')
             .eq('channel_id', channel_id)
             .single();
 
-        if (channelError || !channel) {
+        if (channel_error || !channel) {
             return NextResponse.json(
                 { success: false, error: 'Channel not found or access denied' },
                 { status: 404 }
@@ -51,7 +54,7 @@ export async function POST(request: Request) {
 
         // 2. Query Pinecone with the embedding
         console.log('Querying Pinecone...');
-        const index = await pinecone.Index(process.env.PINECONE_INDEX!);
+        const index = await pinecone.Index(process.env.PINECONE_INDEX_TWO!);
         const queryResponse = await index.query({
             vector: vector,
             topK: 3,
@@ -67,31 +70,34 @@ export async function POST(request: Request) {
 
         const formattedPrompt = await ragPromptTemplate.format({
             context,
-            question: content
+            question: content,
+            character: 'Deadpool'
         });
         console.log('Formatted prompt:', formattedPrompt);
-        const response = await chatModel.invoke(formattedPrompt);
+        const response = await chatModel.invoke(formattedPrompt, {
+            timeout: 30000, // 30 seconds timeout
+        });
         console.log('LLM response:', response);
 
         // 5. Store response in Supabase
-        const { data: messageData, error: messageError } = await supabase
-            .from('messages')
-            .insert({
-                channel_id,
-                content: response.content,
-                account_id: '550e8400-e29b-41d4-a716-446655440000', // Your replica's account_id
-            })
-            .select();
+        const result = await service_manager.messages.createMessage(
+            channel_id,
+            'd9d2c190-fee1-4ef7-9c2e-9dfdcda17c2f', // Deadpool Replica
+            response.content.toString(),
+            {},
+            undefined
+        )
+        console.log('Result:', result)
 
-        if (messageError) {
-            console.error('Error storing message:', messageError);
+        if (!result.success) {
+            console.error('Error storing message:', result.failure?.message);
             return NextResponse.json(
-                { success: false, error: 'Failed to store message' },
+                { success: false, error: result.failure?.message },
                 { status: 500 }
             );
         }
 
-        return NextResponse.json({ success: true, message: messageData });
+        return NextResponse.json({ success: true });
 
     } catch (error) {
         console.error('RAG error:', error);

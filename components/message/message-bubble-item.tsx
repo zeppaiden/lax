@@ -6,16 +6,11 @@ import { Download, FileIcon, Loader2 } from "lucide-react"
 import { Account, Message } from "@/services/types"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { MessageBubbleMenubar } from "./message-bubble-menubar"
 import { Button } from "../ui/button"
 import { useServiceContext } from "@/contexts/page"
 import { toast } from "sonner"
-
-interface Reaction {
-  emoji: string;
-  count: number;
-}
 
 interface Payload {
   path: string;
@@ -25,14 +20,12 @@ interface Payload {
 
 interface MessageBubbleItemProps {
   message: Message;
-  current_account: Account;
-  message_account?: Account;
+  account: Account;
 }
 
 export function MessageBubbleItem({ 
   message, 
-  current_account, 
-  message_account, 
+  account, 
 }: MessageBubbleItemProps) {
   const { service_manager } = useServiceContext()
   const [signed_payloads, setSignedPayloads] = React.useState<Record<string, string>>({})
@@ -59,7 +52,7 @@ export function MessageBubbleItem({
   const handleReactionClick = async (emoji: string) => {
     const result = await service_manager.messages.toggleReaction(
       message.message_id, 
-      current_account.account_id, 
+      account.account_id, 
       emoji
     )
 
@@ -90,7 +83,7 @@ export function MessageBubbleItem({
     <div className="group flex items-start gap-3 p-2">
       <Avatar className="h-8 w-8">
         <AvatarFallback className="bg-primary text-primary-foreground font-sans">
-          {message_account?.fname?.[0] || '?'}
+          {account?.fname?.[0] || '?'}
         </AvatarFallback>
       </Avatar>
 
@@ -98,9 +91,9 @@ export function MessageBubbleItem({
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="font-semibold font-sans">
-              {message_account ? `${message_account.fname} ${message_account.lname}` : 'Unknown User'}
+              {account ? `${account.fname} ${account.lname}` : 'Unknown User'}
             </span>
-            {message_account?.robot && (
+            {account?.robot && (
               <Badge variant="secondary" className="h-5 px-1.5 font-sans">
                 BOT
               </Badge>

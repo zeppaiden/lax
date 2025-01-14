@@ -11,7 +11,7 @@ interface MessageBubbleListProps {
 }
 
 interface MessageWithAccount extends Message {
-  account?: Account;
+  account: Account;
 }
 
 export function MessageBubbleList({ channel_id }: MessageBubbleListProps) {
@@ -19,12 +19,23 @@ export function MessageBubbleList({ channel_id }: MessageBubbleListProps) {
   const [messages, setMessages] = React.useState<MessageWithAccount[]>([])
   const messagesEndRef = React.useRef<HTMLDivElement>(null)
 
-  const handleCreateMessage = React.useCallback(async (message: Message) => {
-    const accountResult = await service_manager.accounts.selectAccount(message.created_by)
-    const messageWithAccount = {
-      ...message,
-      account: accountResult.success ? accountResult.content : undefined
+  const createMessageWithAccount = async (message: Message) => {
+    const result = await service_manager.accounts.selectAccount(message.created_by)
+
+    if (!result.success) {
+      toast.error(result.failure?.message || "Failed to load account", {
+        description: result.failure?.context || "An unexpected error occurred"
+      })
+      return
     }
+
+    return { ...message, account: result.content as Account }
+  }
+
+  const handleCreateMessage = React.useCallback(async (message: Message) => {
+    const messageWithAccount = await createMessageWithAccount(message)
+
+    if (!messageWithAccount) return
 
     setMessages(prev => {
       if (prev.some(m => m.message_id === message.message_id)) {
@@ -36,7 +47,7 @@ export function MessageBubbleList({ channel_id }: MessageBubbleListProps) {
 
   const handleUpdateMessage = React.useCallback((message: Message) => {
     setMessages(prev => prev.map(m => 
-      m.message_id === message.message_id ? message : m
+      m.message_id === message.message_id ? { ...m, ...message } : m
     ))
   }, [])
 
@@ -64,14 +75,10 @@ export function MessageBubbleList({ channel_id }: MessageBubbleListProps) {
         // Fetch account information for each message
         const messagesWithAccounts = await Promise.all(
           (messages_result.content || []).map(async (message) => {
-            const accountResult = await service_manager.accounts.selectAccount(message.created_by)
-            return {
-              ...message,
-              account: accountResult.success ? accountResult.content : undefined
-            }
+            return await createMessageWithAccount(message)
           })
         )
-        setMessages(messagesWithAccounts)
+        setMessages(messagesWithAccounts as MessageWithAccount[])
       } else {
         toast.error(messages_result.failure?.message || "Failed to load messages", {
           description: messages_result.failure?.context || "An unexpected error occurred"
@@ -114,8 +121,7 @@ export function MessageBubbleList({ channel_id }: MessageBubbleListProps) {
         <MessageBubbleItem
           key={message.message_id}
           message={message}
-          current_account={current_account}
-          message_account={message.account}
+          account={message.account}
         />
       ))}
       <div ref={messagesEndRef} />

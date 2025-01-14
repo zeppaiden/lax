@@ -7,12 +7,14 @@ import { FileIcon, Loader2, Paperclip, Send, X } from "lucide-react"
 import { Account } from "@/services/types"
 import { useServiceContext } from "@/contexts/page"
 import { toast } from "sonner"
-
+import { createClient } from "@/utils/supabase/client"
 interface MessageInputAreaProps {
   channel_id: string | null
 }
 
 export function MessageInputArea({ channel_id }: MessageInputAreaProps) {
+  const supabase = createClient()
+
   const { service_manager, current_account } = useServiceContext()
   const [content, setContent] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
@@ -68,29 +70,34 @@ export function MessageInputArea({ channel_id }: MessageInputAreaProps) {
         return
       }
 
-      console.log('channel_id:', channel_id)
-      console.log('content:', content.trim())
-      console.log('Desired whisper?', channel_id === '43af5688-edee-4203-8f15-b6e773411e7a' ? 'Yes' : 'No')
-      if (channel_id === '43af5688-edee-4203-8f15-b6e773411e7a') {
-        const result = await service_manager.messages.createAIResponse(
-          channel_id,
-          content.trim()
-        )
-        console.log('AI response result:', result)
+      const { data, error } = await supabase
+        .from('channels_accounts')
+        .select('channel_id')
+        .eq('account_id', 'd9d2c190-fee1-4ef7-9c2e-9dfdcda17c2f')
+        .eq('channel_id', channel_id);
 
+      if (!error && data && data.length > 0) {
+        console.log('Deadpool is in this channel')
+
+        const response = await fetch('/api/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ channel_id, content: content.trim() })
+        })
+
+        const result = await response.json();
+        
         if (!result.success) {
           toast.error('Failed to get AI response', {
-            id: toastId,
             description: result.failure?.message || "Unknown error"
           })
-        } else {
-          toast.success('AI response sent', { id: toastId })
         }
-      }
-
-      if (toastId) {
+      } else if (toastId) {
         toast.success('Message sent with files', { id: toastId })
       }
+
       setContent("")
       setFiles([])
     } catch (error) {

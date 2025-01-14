@@ -174,8 +174,9 @@ export const signUpWithEmail = async (formData: FormData) => {
 
 export const signInWithEmail = async (formData: FormData) => {
   const supabase = await createClient();
-  const origin = (await headers()).get("origin");
+  const origin = (await headers()).get("origin") || "http://localhost:3000";
   const mail = formData.get("mail") as string;
+  
   const { data, error } = await supabase.auth.signInWithOtp({
     email: mail,
     options: {
@@ -183,6 +184,7 @@ export const signInWithEmail = async (formData: FormData) => {
       emailRedirectTo: `${origin}/auth/callback?redirect_to=${DASHBOARD_REDIRECT_URL}`,
     },
   })
+  
   if (error) {
     return encodedRedirect("error", "/sign-in", error.message);
   }
