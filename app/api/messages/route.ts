@@ -45,27 +45,33 @@ export async function POST(request: Request) {
         }
 
         // 1. Convert content to embedding vector
+        console.log('Generating embedding...');
         const vector = await embeddings.embedQuery(content);
+        console.log('Embedding generated');
 
         // 2. Query Pinecone with the embedding
+        console.log('Querying Pinecone...');
         const index = await pinecone.Index(process.env.PINECONE_INDEX!);
         const queryResponse = await index.query({
             vector: vector,
             topK: 3,
             includeMetadata: true,
         });
+        console.log('Pinecone response:', queryResponse);
 
-        // 3. Format context from Pinecone results
+        // 3. Format context and generate response
         const context = queryResponse.matches
             .map((match: any) => match.metadata?.text)
             .join('\n');
+        console.log('Formatted context:', context);
 
-        // 4. Generate response using LangChain
         const formattedPrompt = await ragPromptTemplate.format({
             context,
-            question: content,
+            question: content
         });
+        console.log('Formatted prompt:', formattedPrompt);
         const response = await chatModel.invoke(formattedPrompt);
+        console.log('LLM response:', response);
 
         // 5. Store response in Supabase
         const { data: messageData, error: messageError } = await supabase
@@ -84,11 +90,6 @@ export async function POST(request: Request) {
                 { status: 500 }
             );
         }
-
-        // Log each major step
-        console.log('Generated embedding');
-        console.log('Pinecone response:', queryResponse);
-        console.log('Generated LLM response:', response);
 
         return NextResponse.json({ success: true, message: messageData });
 
