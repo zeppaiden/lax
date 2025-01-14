@@ -20,6 +20,7 @@ interface Reaction {
 interface Payload {
   path: string;
   size: number;
+  type?: string;
 }
 
 interface MessageBubbleItemProps {
@@ -70,13 +71,17 @@ export function MessageBubbleItem({
   }
 
   const handlePayloadDownload = async (payload: Payload) => {
-    const result = await service_manager.payloads.signedPayload(payload.path)
+    console.log('Getting signed URL for payload:', payload)
+    const result = await service_manager.messages.getSignedUrl(payload.path) // We'll add this method
+    console.log('Signed URL result:', result)
+  
     if (result.success && typeof result.content === 'string') {
       setSignedPayloads(prev => ({
         ...prev,
         [payload.path]: result.content as string
       }))
     } else {
+      console.error('Failed to get signed URL:', result)
       toast.error('Failed to generate download link')
     }
   }

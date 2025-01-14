@@ -12,83 +12,36 @@ interface MessageInputAreaProps {
   channel_id: string | null
 }
 
-interface FileUpload {
-  file: File;
-  uploading: boolean;
-  path?: string;
-  originalName?: string;
-}
-
 export function MessageInputArea({ channel_id }: MessageInputAreaProps) {
   const { service_manager, current_account } = useServiceContext()
   const [content, setContent] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [isUploading, setIsUploading] = React.useState(false)
-  const [files, setFiles] = React.useState<FileUpload[]>([])
+  const [files, setFiles] = React.useState<File[]>([])
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !channel_id) return
 
-    const newFiles = Array.from(e.target.files).map(file => ({
-      file,
-      uploading: true
-    }))
-
+    const newFiles = Array.from(e.target.files)
     setFiles(prev => [...prev, ...newFiles])
 
-    for (const fileUpload of newFiles) {
-      const toastId = toast.loading(`Uploading ${fileUpload.file.name}...`)
-
-      try {
-        const result = await service_manager.payloads.uploadPayload(
-          channel_id,
-          fileUpload.file
-        )
-
-        if (!result.success) {
-          toast.error(`Failed to upload ${fileUpload.file.name}`, {
-            id: toastId,
-            description: result.failure?.message
-          })
-          setFiles(prev => prev.filter(f => f !== fileUpload))
-          continue
-        }
-
-        setFiles(prev => prev.map(f => 
-          f === fileUpload ? { 
-            ...f, 
-            uploading: false, 
-            path: result.content?.path,
-            originalName: fileUpload.file.name
-          } : f
-        ))
-        toast.success(`Uploaded ${fileUpload.file.name}`, { id: toastId })
-      } catch (error) {
-        toast.error(`Failed to upload ${fileUpload.file.name}`, { id: toastId })
-        setFiles(prev => prev.filter(f => f !== fileUpload))
-      }
-    }
-
-    // Clear the input
+    // Clear the input for future selections
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
   }
 
-  const handleRemoveFile = (fileToRemove: FileUpload) => {
+  const handleRemoveFile = (fileToRemove: File) => {
     setFiles(prev => prev.filter(f => f !== fileToRemove))
   }
 
   const handleSubmit = async () => {
     if (!channel_id) return
     if (!content.trim() && files.length === 0) return
-    if (files.some(f => f.uploading)) {
-      toast.error("Please wait for files to finish uploading")
-      return
-    }
     
     setIsSubmitting(true)
+    const toastId = files.length ? toast.loading(`Sending message with ${files.length} file(s)...`) : undefined
+
     try {
       const channel_result = await service_manager.channels.selectChannel(channel_id)
       
@@ -103,26 +56,28 @@ export function MessageInputArea({ channel_id }: MessageInputAreaProps) {
         channel_id,
         current_account.account_id,
         content.trim(),
-        {
-          payloads: files
-            .filter(f => f.path)
-            .map(f => ({
-              path: f.path!,
-              size: f.file.size,
-              type: f.file.type
-            }))
-        }
+        {},  // Empty meta object - files will be handled inside createMessage
+        files // Pass files directly
       )
 
       if (!result.success) {
         toast.error(result.failure?.message || "Failed to send message", {
+          id: toastId,
           description: result.failure?.context || "Unknown error"
         })
         return
       }
 
+      if (toastId) {
+        toast.success('Message sent with files', { id: toastId })
+      }
       setContent("")
       setFiles([])
+    } catch (error) {
+      toast.error('Failed to send message', {
+        id: toastId,
+        description: error instanceof Error ? error.message : 'Unknown error'
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -159,19 +114,15 @@ export function MessageInputArea({ channel_id }: MessageInputAreaProps) {
               className="flex items-center gap-2 rounded-md border bg-muted p-2"
             >
               <FileIcon className="h-4 w-4" />
-              <span className="text-sm">{file.file.name}</span>
-              {file.uploading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-4 w-4 p-0"
-                  onClick={() => handleRemoveFile(file)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
+              <span className="text-sm">{file.name}</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-4 w-4 p-0"
+                onClick={() => handleRemoveFile(file)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           ))}
         </div>
@@ -203,7 +154,7 @@ export function MessageInputArea({ channel_id }: MessageInputAreaProps) {
           </Button>
           <Button
             size="icon"
-            disabled={(!content.trim() && files.length === 0) || isSubmitting || files.some(f => f.uploading)}
+            disabled={(!content.trim() && files.length === 0) || isSubmitting}
             onClick={handleSubmit}
           >
             {isSubmitting ? (

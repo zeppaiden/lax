@@ -13,9 +13,6 @@ export enum TableName {
   NETWORKS = 'networks',
   CHANNELS = 'channels',
   MESSAGES = 'messages',
-  PAYLOADS = 'payloads',
-  MENTIONS = 'mentions',
-  REACTIONS = 'reactions',
   NETWORKS_ACCOUNTS = 'networks_accounts',
   CHANNELS_ACCOUNTS = 'channels_accounts',
 }
@@ -29,13 +26,6 @@ export enum ChannelType {
 export enum MentionType {
   ACCOUNT = 'account',
   CHANNEL = 'channel'
-}
-
-export enum PayloadType {
-  IMAGE = 'image',
-  VIDEO = 'video',
-  AUDIO = 'audio',
-  FILE  = 'file'
 }
 
 export interface Account {
@@ -92,32 +82,6 @@ export interface Message {
   meta: MessageMeta;
 }
 
-export interface Mention {
-  mention_id: string;
-  message_id: string;
-  account_id: string;
-  created_at: string;
-  type: MentionType;
-}
-
-export interface Reaction {
-  reaction_id: string;
-  message_id: string;
-  created_at: string;
-  created_by: string;
-  emoji: string;
-}
-
-export interface Payload {
-  payload_id: string;
-  message_id: string;
-  created_at: string;
-  created_by: string;
-  path: string;
-  type: PayloadType;
-  size: number;
-}
-
 export interface NetworkAccount {
   network_id: string;
   account_id: string;
@@ -151,9 +115,6 @@ export interface MessageContext {
   message: Message;
   account: Account;
   channel: Channel;
-  payloads: Payload[];
-  mentions: Mention[];
-  reactions: Reaction[];
 }
 
 export interface SearchMessage {

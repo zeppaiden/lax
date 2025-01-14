@@ -19,14 +19,20 @@ export function MessageBubbleList({ channel_id }: MessageBubbleListProps) {
   const [messages, setMessages] = React.useState<MessageWithAccount[]>([])
   const messagesEndRef = React.useRef<HTMLDivElement>(null)
 
-  const handleCreateMessage = React.useCallback((message: Message) => {
+  const handleCreateMessage = React.useCallback(async (message: Message) => {
+    const accountResult = await service_manager.accounts.selectAccount(message.created_by)
+    const messageWithAccount = {
+      ...message,
+      account: accountResult.success ? accountResult.content : undefined
+    }
+
     setMessages(prev => {
       if (prev.some(m => m.message_id === message.message_id)) {
         return prev
       }
-      return [...prev, message]
+      return [...prev, messageWithAccount]
     })
-  }, [])
+  }, [service_manager])
 
   const handleUpdateMessage = React.useCallback((message: Message) => {
     setMessages(prev => prev.map(m => 

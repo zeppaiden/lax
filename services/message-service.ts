@@ -16,12 +16,27 @@ export class MessageService {
   private readonly supabase: SupabaseClient
   private readonly MINIMUM_MESSAGE_LENGTH = 1
   private readonly MAXIMUM_MESSAGE_LENGTH = 2000
+  
+  // Add these storage-related constants
+  private readonly STORAGE_BUCKET = 'payloads'
+  private readonly MINIMUM_FILE_SIZE = 0
+  private readonly MAXIMUM_FILE_SIZE = 10485760 // 10MB in bytes
 
+  // Update your message schema to handle file uploads
   private readonly message_schema = z.object({
     channel_id: z.string().uuid(),
     account_id: z.string().uuid(),
     content: z.string().min(this.MINIMUM_MESSAGE_LENGTH).max(this.MAXIMUM_MESSAGE_LENGTH),
-    payload: z.instanceof(File).optional()
+    meta: z.record(z.any()).optional()
+  })
+  
+  // Add a file upload schema
+  private readonly file_schema = z.object({
+    file: z.instanceof(File).refine(
+      (file) => file.size >= this.MINIMUM_FILE_SIZE && file.size <= this.MAXIMUM_FILE_SIZE,
+      (file) => ({ message: `File size must be between ${this.MINIMUM_FILE_SIZE} and ${this.MAXIMUM_FILE_SIZE} bytes` })
+    ),
+    channel_id: z.string().uuid()
   })
 
   private readonly uuid_schema = z.string().uuid()
@@ -30,14 +45,44 @@ export class MessageService {
     this.supabase = supabase
   }
 
+  // Modify your createMessage method to handle file uploads
   async createMessage(
     channel_id: string,
     account_id: string,
     content: string,
-    meta: Record<string, any> = {}
+    meta: Record<string, any> = {},
+    files?: File[]  // Add optional files parameter
   ): Promise<Result<Message>> {
     try {
-      const validated_data = this.message_schema.parse({ channel_id, account_id, content })
+      const validated_data = this.message_schema.parse({ channel_id, account_id, content, meta })
+
+      // Handle file uploads if present
+      if (files && files.length > 0) {
+        const uploadResults = await Promise.all(
+          files.map(file => this.uploadFile(channel_id, file))
+        )
+
+        const failedUploads = uploadResults.filter(result => !result.success)
+        if (failedUploads.length > 0) {
+          return {
+            success: false,
+            failure: {
+              code: 'UPLOAD_FAILED',
+              message: 'Failed to upload one or more files',
+              context: failedUploads.map(f => f.failure?.message).join(', ')
+            }
+          }
+        }
+
+        // Add successful uploads to meta
+        meta.payloads = uploadResults
+          .filter(r => r.success)
+          .map(r => ({
+            path: r.content?.path,
+            size: files.find(f => f.name === r.content?.path.split('/').pop())?.size || 0,
+            type: files.find(f => f.name === r.content?.path.split('/').pop())?.type || ''
+          }))
+      }
 
       const { data, error } = await this.supabase.rpc('fn_create_message', {
         p_channel_id: channel_id,
@@ -62,7 +107,7 @@ export class MessageService {
         content: data as Message
       }
     } catch (error) {
-      console.error('Message creation error:', error);
+      console.error('Message creation error:', error)
       if (error instanceof z.ZodError) {
         return {
           success: false,
@@ -83,7 +128,7 @@ export class MessageService {
         }
       }
     }
-  } 
+  }
 
   async selectMessages(
     channel_id: string,
@@ -422,6 +467,107 @@ export class MessageService {
         }
       }
 
+      return {
+        success: false,
+        failure: {
+          code: 'UNKNOWN_ERROR',
+          message: 'An unexpected error occurred',
+          context: error instanceof Error ? error.message : undefined
+        }
+      }
+    }
+  }
+
+  // Add these new methods to handle file operations
+  private async uploadFile(channel_id: string, file: File): Promise<Result<{ path: string }>> {
+    try {
+      const validated = this.file_schema.parse({ channel_id, file })
+      const path = `${channel_id}/${file.name}`
+
+      console.log('Attempting to upload file:', {
+        bucket: this.STORAGE_BUCKET,
+        path,
+        fileSize: file.size,
+        fileType: file.type
+      })
+
+      const { data, error } = await this.supabase
+        .storage
+        .from(this.STORAGE_BUCKET)
+        .upload(path, file, {
+          upsert: true
+        })
+
+      if (error) {
+        console.error('Upload error:', error)
+        return {
+          success: false,
+          failure: {
+            code: 'UPLOAD_FAILED',
+            message: 'Failed to upload file',
+            context: error.message
+          }
+        }
+      }
+
+      console.log('Upload successful:', data)
+      return {
+        success: true,
+        content: { path: data.path }
+      }
+    } catch (error) {
+      console.error('File upload error:', error)
+      if (error instanceof z.ZodError) {
+        return {
+          success: false,
+          failure: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid file data',
+            context: error.errors.map(e => e.message).join(', ')
+          }
+        }
+      }
+
+      return {
+        success: false,
+        failure: {
+          code: 'UPLOAD_FAILED',
+          message: 'Failed to upload file',
+          context: error instanceof Error ? error.message : undefined
+        }
+      }
+    }
+  }
+
+  async getSignedUrl(path: string): Promise<Result<string>> {
+    try {
+      console.log('Getting signed URL for path:', path)
+      
+      const { data, error } = await this.supabase
+        .storage
+        .from(this.STORAGE_BUCKET)
+        .createSignedUrl(path, 3600, {
+          download: true
+        })
+  
+      if (error) {
+        console.error('Signed URL error:', error)
+        return {
+          success: false,
+          failure: {
+            code: 'SIGNED_URL_FAILED',
+            message: 'Failed to create signed URL',
+            context: error.message
+          }
+        }
+      }
+  
+      return {
+        success: true,
+        content: data.signedUrl
+      }
+    } catch (error) {
+      console.error('Signed URL error:', error)
       return {
         success: false,
         failure: {

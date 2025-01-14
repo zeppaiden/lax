@@ -3,7 +3,6 @@ import { AccountService } from '@/services/account-service'
 import { ChannelService } from '@/services/channel-service'
 import { MessageService } from '@/services/message-service'
 import { NetworkService } from '@/services/network-service'
-import { PayloadService } from '@/services/payload-service'
 
 export class ServiceManager {
   private static service_manager: ServiceManager | null = null
@@ -13,7 +12,6 @@ export class ServiceManager {
   private readonly channel_service: ChannelService
   private readonly message_service: MessageService
   private readonly network_service: NetworkService
-  private readonly payload_service: PayloadService
 
   private constructor(supabase: SupabaseClient) {
     this.supabase = supabase
@@ -23,7 +21,6 @@ export class ServiceManager {
     this.channel_service = new ChannelService(this.supabase)
     this.message_service = new MessageService(this.supabase)
     this.network_service = new NetworkService(this.supabase)
-    this.payload_service = new PayloadService(this.supabase)
   }
 
   public static initialize(supabase: SupabaseClient): ServiceManager {
@@ -56,10 +53,6 @@ export class ServiceManager {
 
   public get networks(): NetworkService {
     return this.network_service
-  }
-
-  public get payloads(): PayloadService {
-    return this.payload_service
   }
 
   public static reset(): void {
