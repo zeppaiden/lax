@@ -85,7 +85,6 @@ export default function Page() {
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <MessageArea
-            account={current_account}
             channel_id={current_spinoff ? current_spinoff.channel_id : current_channel?.channel_id || ""}
           />
         </div>

@@ -9,7 +9,6 @@ import { useServiceContext } from "@/contexts/page"
 import { toast } from "sonner"
 
 interface MessageInputAreaProps {
-  account: Account
   channel_id: string | null
 }
 
@@ -20,8 +19,8 @@ interface FileUpload {
   originalName?: string;
 }
 
-export function MessageInputArea({ account, channel_id }: MessageInputAreaProps) {
-  const { service_manager } = useServiceContext()
+export function MessageInputArea({ channel_id }: MessageInputAreaProps) {
+  const { service_manager, current_account } = useServiceContext()
   const [content, setContent] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [isUploading, setIsUploading] = React.useState(false)
@@ -102,7 +101,7 @@ export function MessageInputArea({ account, channel_id }: MessageInputAreaProps)
 
       const result = await service_manager.messages.createMessage(
         channel_id,
-        account.account_id,
+        current_account.account_id,
         content.trim(),
         {
           payloads: files

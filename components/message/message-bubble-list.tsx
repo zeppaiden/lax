@@ -7,13 +7,16 @@ import { useServiceContext } from "@/contexts/page"
 import { toast } from "sonner"
 
 interface MessageBubbleListProps {
-  account: Account
   channel_id: string | null
 }
 
-export function MessageBubbleList({ account, channel_id }: MessageBubbleListProps) {
-  const { service_manager } = useServiceContext()
-  const [messages, setMessages] = React.useState<Message[]>([])
+interface MessageWithAccount extends Message {
+  account?: Account;
+}
+
+export function MessageBubbleList({ channel_id }: MessageBubbleListProps) {
+  const { service_manager, current_account } = useServiceContext()
+  const [messages, setMessages] = React.useState<MessageWithAccount[]>([])
   const messagesEndRef = React.useRef<HTMLDivElement>(null)
 
   const handleCreateMessage = React.useCallback((message: Message) => {
@@ -52,7 +55,17 @@ export function MessageBubbleList({ account, channel_id }: MessageBubbleListProp
       // Fetch initial messages
       const messages_result = await service_manager.messages.selectMessages(channel_id)
       if (messages_result.success) {
-        setMessages(messages_result.content || [])
+        // Fetch account information for each message
+        const messagesWithAccounts = await Promise.all(
+          (messages_result.content || []).map(async (message) => {
+            const accountResult = await service_manager.accounts.selectAccount(message.created_by)
+            return {
+              ...message,
+              account: accountResult.success ? accountResult.content : undefined
+            }
+          })
+        )
+        setMessages(messagesWithAccounts)
       } else {
         toast.error(messages_result.failure?.message || "Failed to load messages", {
           description: messages_result.failure?.context || "An unexpected error occurred"
@@ -79,7 +92,7 @@ export function MessageBubbleList({ account, channel_id }: MessageBubbleListProp
     }
 
     initialize()
-  }, [channel_id, service_manager.channels])
+  }, [channel_id, service_manager])
 
   if (!channel_id) {
     return (
@@ -95,7 +108,8 @@ export function MessageBubbleList({ account, channel_id }: MessageBubbleListProp
         <MessageBubbleItem
           key={message.message_id}
           message={message}
-          account={account}
+          current_account={current_account}
+          message_account={message.account}
         />
       ))}
       <div ref={messagesEndRef} />

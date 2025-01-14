@@ -10,6 +10,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { MessageBubbleMenubar } from "./message-bubble-menubar"
 import { Button } from "../ui/button"
 import { useServiceContext } from "@/contexts/page"
+import { toast } from "sonner"
 
 interface Reaction {
   emoji: string;
@@ -21,7 +22,17 @@ interface Payload {
   size: number;
 }
 
-export function MessageBubbleItem({ account, message }: { account: Account, message: Message }) {
+interface MessageBubbleItemProps {
+  message: Message;
+  current_account: Account;
+  message_account?: Account;
+}
+
+export function MessageBubbleItem({ 
+  current_account, 
+  message_account, 
+  message 
+}: MessageBubbleItemProps) {
   const { service_manager } = useServiceContext()
   
   const reactions = React.useMemo(() => {
@@ -43,11 +54,25 @@ export function MessageBubbleItem({ account, message }: { account: Account, mess
     return message.meta.payloads;
   }, [message.meta]);
 
+  const handleReactionClick = async (emoji: string) => {
+    const result = await service_manager.messages.toggleReaction(
+      message.message_id, 
+      current_account.account_id, 
+      emoji
+    )
+
+    if (result.success) {
+      toast.success('Reaction toggled successfully')
+    } else {
+      toast.error('Failed to toggle reaction')
+    }
+  }
+
   return (
     <div className="group flex items-start gap-3 p-2">
       <Avatar className="h-8 w-8">
         <AvatarFallback className="bg-primary text-primary-foreground font-sans">
-          {account.fname[0]}
+          {message_account?.fname?.[0] || '?'}
         </AvatarFallback>
       </Avatar>
 
@@ -55,9 +80,9 @@ export function MessageBubbleItem({ account, message }: { account: Account, mess
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="font-semibold font-sans">
-              {`${account.fname} ${account.lname}`}
+              {message_account ? `${message_account.fname} ${message_account.lname}` : 'Unknown User'}
             </span>
-            {account.robot && (
+            {message_account?.robot && (
               <Badge variant="secondary" className="h-5 px-1.5 font-sans">
                 BOT
               </Badge>
@@ -82,11 +107,7 @@ export function MessageBubbleItem({ account, message }: { account: Account, mess
                   key={reaction.emoji}
                   variant="secondary" 
                   size="sm"
-                  onClick={() => service_manager.messages.toggleReaction(
-                    message.message_id, 
-                    account.account_id, 
-                    reaction.emoji
-                  )}
+                  onClick={() => handleReactionClick(reaction.emoji)}
                   className="px-2 py-1 hover:bg-muted"
                 >
                   <span className="text-lg">{reaction.emoji}</span>
