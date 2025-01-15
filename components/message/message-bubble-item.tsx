@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Download, FileIcon, Loader2 } from "lucide-react"
+import Image from "next/image"
 
 import { Account, Message } from "@/services/types"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -13,7 +14,9 @@ import { useServiceContext } from "@/contexts/page"
 import { toast } from "sonner"
 
 interface Payload {
+  name?: string;
   path: string;
+  purl: string;
   size: number;
   type?: string;
 }
@@ -28,7 +31,6 @@ export function MessageBubbleItem({
   account, 
 }: MessageBubbleItemProps) {
   const { service_manager } = useServiceContext()
-  const [signed_payloads, setSignedPayloads] = React.useState<Record<string, string>>({})
   
   const reactions = React.useMemo(() => {
     if (!message.meta) return [];
@@ -64,18 +66,21 @@ export function MessageBubbleItem({
   }
 
   const handlePayloadDownload = async (payload: Payload) => {
-    console.log('Getting signed URL for payload:', payload)
-    const result = await service_manager.messages.getSignedUrl(payload.path) // We'll add this method
-    console.log('Signed URL result:', result)
-  
-    if (result.success && typeof result.content === 'string') {
-      setSignedPayloads(prev => ({
-        ...prev,
-        [payload.path]: result.content as string
-      }))
+    console.log('Downloading payload:', payload)
+    const result = await service_manager.messages.downloadFile(payload.path)
+    console.log('Download result:', result)
+
+    if (result.success && result.content instanceof Blob) {
+      const url = URL.createObjectURL(result.content)
+
+      const link = document.createElement('a')
+      link.href = url
+      link.download = payload.path.split('/').pop() || 'file'
+      link.click()
+
+      URL.revokeObjectURL(url)
     } else {
-      console.error('Failed to get signed URL:', result)
-      toast.error('Failed to generate download link')
+      toast.error('Failed to download file')
     }
   }
 
@@ -153,26 +158,77 @@ export function MessageBubbleItem({
                 variant="ghost" 
                 size="icon"
                 asChild
-                disabled={!signed_payloads[payload.path]}
+                disabled={!payload.purl}
               >
                 <a 
-                  href={signed_payloads[payload.path]} 
-                  download={payload.path.split('/').pop()}
+                  href={payload.purl} 
+                  download={payload.path}
                   onClick={(e) => {
-                    if (!signed_payloads[payload.path]) {
+                    if (!payload.purl) {
                       e.preventDefault()
                       handlePayloadDownload(payload)
                     }
                   }}
                 >
-                  {!signed_payloads[payload.path] ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4" />
-                  )}
+                  <Download className="h-4 w-4" />
                 </a>
               </Button>
             </CardContent>
+            
+            { payload.type?.includes('image') && payload.purl && (
+              <CardFooter className="w-full">
+                <div className="relative w-full max-w-[400px] aspect-[4/3]">
+                  <Image 
+                    src={payload.purl} 
+                    alt={payload.path} 
+                    fill
+                    className="object-contain rounded-md"
+                  />
+                </div>
+              </CardFooter>
+            )}
+
+            { payload.type?.includes('video') && payload.purl && (
+              <CardFooter className="w-full">
+                <div className="relative w-full max-w-[400px]">
+                  <video 
+                    controls
+                    className="w-full rounded-md"
+                    preload="metadata"
+                  >
+                    <source src={payload.purl} type={payload.type} />
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+              </CardFooter>
+            )}
+
+            { payload.type?.includes('audio') && payload.purl && (
+              <CardFooter className="w-full">
+                <div className="w-full max-w-[400px]">
+                  <audio 
+                    controls
+                    className="w-full"
+                    preload="metadata"
+                  >
+                    <source src={payload.purl} type={payload.type} />
+                    Your browser does not support the audio tag.
+                  </audio>
+                </div>
+              </CardFooter>
+            )}
+
+            { payload.type?.includes('pdf') && payload.purl && (
+              <CardFooter className="w-full">
+                <div className="w-full max-w-[600px] aspect-[8.5/11]">
+                  <iframe
+                    src={`${payload.purl}#view=FitH`}
+                    className="w-full h-full rounded-md border"
+                    title={`PDF: ${payload.path.split('/').pop()}`}
+                  />
+                </div>
+              </CardFooter>
+            )}
           </Card>
         ))}
 

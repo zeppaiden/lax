@@ -44,6 +44,7 @@ export function MessageInputArea({ channel_id }: MessageInputAreaProps) {
     setIsSubmitting(true)
     const toastId = files.length ? toast.loading(`Sending message with ${files.length} file(s)...`) : undefined
 
+    console.log('files', files)
     try {
       const channel_result = await service_manager.channels.selectChannel(channel_id)
       

@@ -18,9 +18,9 @@ export class MessageService {
   private readonly MAXIMUM_MESSAGE_LENGTH = 2000
   
   // Add these storage-related constants
-  private readonly STORAGE_BUCKET = 'payloads'
+  private readonly STORAGE_BUCKET_NS = 'sdaolyap'
   private readonly MINIMUM_FILE_SIZE = 0
-  private readonly MAXIMUM_FILE_SIZE = 10485760 // 10MB in bytes
+  private readonly MAXIMUM_FILE_SIZE = 104857600 // 100MB
 
   // Update your message schema to handle file uploads
   private readonly message_schema = z.object({
@@ -34,7 +34,7 @@ export class MessageService {
   private readonly file_schema = z.object({
     file: z.instanceof(File).refine(
       (file) => file.size >= this.MINIMUM_FILE_SIZE && file.size <= this.MAXIMUM_FILE_SIZE,
-      (file) => ({ message: `File size must be between ${this.MINIMUM_FILE_SIZE} and ${this.MAXIMUM_FILE_SIZE} bytes` })
+      `File size must be between ${this.MINIMUM_FILE_SIZE} and ${this.MAXIMUM_FILE_SIZE} bytes`
     ),
     channel_id: z.string().uuid()
   })
@@ -79,6 +79,7 @@ export class MessageService {
           .filter(r => r.success)
           .map(r => ({
             path: r.content?.path,
+            purl: r.content?.purl,
             size: files.find(f => f.name === r.content?.path.split('/').pop())?.size || 0,
             type: files.find(f => f.name === r.content?.path.split('/').pop())?.type || ''
           }))
@@ -479,24 +480,22 @@ export class MessageService {
   }
 
   // Add these new methods to handle file operations
-  private async uploadFile(channel_id: string, file: File): Promise<Result<{ path: string }>> {
+  private async uploadFile(channel_id: string, file: File): Promise<Result<{ path: string, purl: string }>> {
     try {
       const validated = this.file_schema.parse({ channel_id, file })
-      const path = `${channel_id}/${file.name}`
+      const path = `${validated.channel_id}/${validated.file.name}`
 
       console.log('Attempting to upload file:', {
-        bucket: this.STORAGE_BUCKET,
+        bucket: this.STORAGE_BUCKET_NS,
         path,
         fileSize: file.size,
         fileType: file.type
       })
 
-      const { data, error } = await this.supabase
+      const { error } = await this.supabase
         .storage
-        .from(this.STORAGE_BUCKET)
-        .upload(path, file, {
-          upsert: true
-        })
+        .from(this.STORAGE_BUCKET_NS)
+        .upload(path, file)
 
       if (error) {
         console.error('Upload error:', error)
@@ -510,10 +509,15 @@ export class MessageService {
         }
       }
 
-      console.log('Upload successful:', data)
+      const { data: { publicUrl } } = await this.supabase
+        .storage
+        .from(this.STORAGE_BUCKET_NS)
+        .getPublicUrl(path)
+
+      console.log('Upload successful:', { path, publicUrl })
       return {
         success: true,
-        content: { path: data.path }
+        content: { path: path, purl: publicUrl }
       }
     } catch (error) {
       console.error('File upload error:', error)
@@ -522,7 +526,7 @@ export class MessageService {
           success: false,
           failure: {
             code: 'VALIDATION_ERROR',
-            message: 'Invalid file data',
+            message: 'File may be too large',
             context: error.errors.map(e => e.message).join(', ')
           }
         }
@@ -539,13 +543,49 @@ export class MessageService {
     }
   }
 
+  async downloadFile(path: string): Promise<Result<Blob>> {
+    try {
+      const { data, error } = await this.supabase
+        .storage
+        .from(this.STORAGE_BUCKET_NS)
+        .download(path)
+
+      if (error) {
+        console.error('Download error:', error)
+        return {
+          success: false,
+          failure: {
+            code: 'DOWNLOAD_FAILED',
+            message: 'Failed to download file',
+            context: error.message
+          }
+        }
+      }
+
+      return {
+        success: true,
+        content: new Blob([data])
+      }
+    } catch (error) {
+      console.error('Download error:', error)
+      return {
+        success: false,
+        failure: {
+          code: 'DOWNLOAD_FAILED',
+          message: 'Failed to download file',
+          context: error instanceof Error ? error.message : undefined
+        }
+      }
+    }
+  }
+
   async getSignedUrl(path: string): Promise<Result<string>> {
     try {
       console.log('Getting signed URL for path:', path)
       
       const { data, error } = await this.supabase
         .storage
-        .from(this.STORAGE_BUCKET)
+        .from(this.STORAGE_BUCKET_NS)
         .createSignedUrl(path, 3600, {
           download: true
         })

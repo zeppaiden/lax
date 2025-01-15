@@ -58,10 +58,10 @@
         - The voice should be able to be customized
         - The voice, if not customized, should be match what the user's behavior indicates
 
-- [ ] Fix payloads not being downloadable after being uploaded and sent
-  - [ ] Fix the payloads' path to be `{network_id}/{channel_id}/{message_id}/{timestamp}.{extension}`
+- [X] Fix payloads not being downloadable after being uploaded and sent
   - Currently, the payloads are uploading properly, being sent without issue, are arriving in the Supabase storage bucket, but are not able to be downloaded. When downloading, the filename is automatically '404' and the file is not found.
   - The suspicion as of now is that the signing path is incorrect.
+- [ ] Fix the payloads' path to be `{network_id}/{channel_id}/{message_id}/{filename}.{extension}`
 
 ## General
 
@@ -406,3 +406,25 @@
   - [ ] UI is TBD
 
 - [ ] Custom emotes???
+
+
+## Single-Page App Navigation
+- [ ] Create a root layout file (`app/layout.tsx`) that wraps your whole app and contains persistent UI
+
+- [ ] Move navigation/sidebar into the layout file, ensuring it stays outside the `{children}` area
+
+- [ ] Replace all `<a>` tags with Next.js `<Link>` components for client-side navigation
+
+- [ ] Add `'use client'` directive to components that use interactivity (useState, onClick, etc.)
+
+- [ ] Create dynamic route folders using [brackets] for variable paths (e.g., `app/channel/[id]/page.tsx`)
+
+- [ ] Use `usePathname()` hook to highlight active navigation items based on current URL
+
+- [ ] Add loading states with `loading.tsx` in your dynamic route folders
+
+- [ ] Update data fetching to use route parameters for content loading
+
+- [ ] Test all navigation flows: clicking links, browser back/forward, URL updates
+
+- [ ] Verify persistent components maintain state during navigation

@@ -66,6 +66,7 @@ interface MessageMeta {
   reactions?: MessageReaction[];
   payloads?: {
     path: string;
+    purl: string;
     size: number;
     type: string;
   }[];
