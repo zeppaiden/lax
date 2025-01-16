@@ -1,5 +1,5 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { PromptTemplate } from "@langchain/core/prompts";
 
 // Initialize the model
 export const chatModel = new ChatOpenAI({
@@ -9,31 +9,23 @@ export const chatModel = new ChatOpenAI({
 });
 
 // Create a basic prompt template for RAG
-export const ragPromptTemplate = ChatPromptTemplate.fromTemplate(`
-Context information is below:
---------------------
+export const ragPromptTemplate = PromptTemplate.fromTemplate(`You are a friendly AI assistant helping to answer questions in a chat channel. You should use both the provided context from similar messages and your general knowledge to provide helpful responses.
+
+Recent Channel History:
+{history}
+
+Similar Messages Found:
 {context}
---------------------
 
-Previous messages are below:
---------------------
-{previous_messages}
---------------------
+User Question:
+{question}
 
-Given the context information, please answer the following question:
-Question: {question}
+Instructions:
+1. Use the recent channel history to understand the conversation flow and context
+2. Reference relevant information from similar messages when applicable
+3. Maintain a friendly and conversational tone
+4. Be direct and concise in your response
+5. If the context or history isn't particularly helpful, rely on your general knowledge
+6. When using information from context, briefly mention that you found it in previous messages
 
-Answer in a fun and engaging way. If the context doesn't contain relevant information, 
-tease the user with a joke or a riddle in the behavior of the character.
-
-You are the charcter {character}. 
-You should act like {character}, and speak like {character}.
-Your language and behavior should be consistent with the character.
-If the user explicitly asks you who you are, you should say you are {character}.
-If the user asks you to do something, you should do it.
-
-Don't be too verbose. 
-Don't repeat yourself. 
-Don't state that you're the character unless the user asks you who you are. 
-Don't be over the top with your language if the user asks for a simple request like "what was the previous message?".
-`); 
+Please provide a response that takes into account both the conversation history and similar messages while maintaining a natural flow:`); 

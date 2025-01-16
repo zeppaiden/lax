@@ -11,9 +11,11 @@ import {
   Account,
   SearchMessage
 } from '@/services/types'
+import { PineconeService, PineconeMessage } from '@/services/pinecone-service'
 
 export class MessageService {
   private readonly supabase: SupabaseClient
+  private readonly pineconeService: PineconeService
   private readonly MINIMUM_MESSAGE_LENGTH = 1
   private readonly MAXIMUM_MESSAGE_LENGTH = 2000
   
@@ -43,6 +45,35 @@ export class MessageService {
 
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase
+    this.pineconeService = new PineconeService()
+  }
+
+  private async syncMessageToPinecone(message: Message, network_id: string) {
+    try {
+      console.log('🔄 Attempting to sync message to Pinecone:', {
+        message_id: message.message_id,
+        channel_id: message.channel_id,
+        network_id: network_id,
+        content_preview: message.content.slice(0, 50) + '...'
+      });
+
+      const pineconeMessage: PineconeMessage = {
+        ...message,
+        network_id
+      };
+
+      const result = await this.pineconeService.syncMessage(pineconeMessage);
+
+      if (!result.success) {
+        console.error('❌ Failed to sync message to Pinecone:', result.error);
+      } else {
+        console.log('✅ Successfully synced message to Pinecone:', {
+          message_id: message.message_id
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error syncing message to Pinecone:', error);
+    }
   }
 
   // Modify your createMessage method to handle file uploads
@@ -51,46 +82,78 @@ export class MessageService {
     account_id: string,
     content: string,
     meta: Record<string, any> = {},
-    files?: File[]  // Add optional files parameter
+    files?: File[]
   ): Promise<Result<Message>> {
     try {
       const validated_data = this.message_schema.parse({ channel_id, account_id, content, meta })
 
-      // Handle file uploads if present
-      if (files && files.length > 0) {
-        const uploadResults = await Promise.all(
-          files.map(file => this.uploadFile(channel_id, file))
-        )
+      // Get channel info to check type and network_id
+      const { data: channel, error: channel_error } = await this.supabase
+        .from(TableName.CHANNELS)
+        .select('*')
+        .eq('channel_id', channel_id)
+        .single()
 
-        const failedUploads = uploadResults.filter(result => !result.success)
-        if (failedUploads.length > 0) {
-          return {
-            success: false,
-            failure: {
-              code: 'UPLOAD_FAILED',
-              message: 'Failed to upload one or more files',
-              context: failedUploads.map(f => f.failure?.message).join(', ')
-            }
+      if (channel_error) {
+        return {
+          success: false,
+          failure: {
+            code: 'SELECT_FAILED',
+            message: 'Failed to retrieve channel',
+            context: channel_error.message
           }
         }
-
-        // Add successful uploads to meta
-        meta.payloads = uploadResults
-          .filter(r => r.success)
-          .map(r => ({
-            path: r.content?.path,
-            purl: r.content?.purl,
-            size: files.find(f => f.name === r.content?.path.split('/').pop())?.size || 0,
-            type: files.find(f => f.name === r.content?.path.split('/').pop())?.type || ''
-          }))
       }
 
-      const { data, error } = await this.supabase.rpc('fn_create_message', {
+      // Handle file uploads if present
+      if (files && files.length > 0) {
+        const payloads = await Promise.all(files.map(async file => {
+          const validated_file = this.file_schema.parse({ file, channel_id })
+          const path = `${this.STORAGE_BUCKET_NS}/${channel_id}/${file.name}`
+
+          const { data, error } = await this.supabase.storage
+            .from(this.STORAGE_BUCKET_NS)
+            .upload(path, file)
+
+          if (error) {
+            throw error
+          }
+
+          return {
+            path,
+            size: file.size,
+            type: file.type,
+            purl: data?.path
+          }
+        }))
+
+        meta = {
+          ...meta,
+          payloads: payloads.map(payload => ({
+            path: payload.path,
+            size: payload.size,
+            type: payload.type,
+            purl: payload.purl
+          }))
+        }
+        console.log('Updated meta with payloads:', meta)
+      }
+
+      console.log('Calling fn_create_message with params:', {
         p_channel_id: channel_id,
         p_account_id: account_id,
         p_content: content,
         p_meta: meta
       })
+
+      const { data: message, error } = await this.supabase.rpc('fn_create_message', {
+        p_channel_id: channel_id,
+        p_account_id: account_id,
+        p_content: content,
+        p_meta: meta
+      })
+
+      console.log('fn_create_message result:', { message, error })
 
       if (error) {
         return {
@@ -103,9 +166,93 @@ export class MessageService {
         }
       }
 
+      // Sync message to Pinecone
+      await this.syncMessageToPinecone(message as Message, channel.network_id);
+
+      // If this is a primary channel and message starts with /ask, create an automatic response
+      if (channel.type === 'primary' && content.trim().toLowerCase().startsWith('/ask')) {
+        console.log('Message is /ask command in primary channel, fetching bot account')
+        
+        // Get Bot McBotface account
+        const { data: bot, error: bot_error } = await this.supabase
+          .from(TableName.ACCOUNTS)
+          .select('account_id')
+          .eq('account_id', 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11') // Bot McBotface's ID
+          .single()
+
+        if (bot_error) {
+          console.error('Failed to get bot account:', bot_error)
+          return {
+            success: true,
+            content: message as Message
+          }
+        }
+
+        // Check if bot is member of channel
+        const { data: membership, error: membershipError } = await this.supabase
+          .from(TableName.CHANNELS_ACCOUNTS)
+          .select('*')
+          .eq('channel_id', channel_id)
+          .eq('account_id', bot.account_id)
+          .single()
+
+        if (membershipError) {
+          console.log('Bot not in channel, adding bot...')
+          // Add bot to channel
+          const { error: joinError } = await this.supabase
+            .from(TableName.CHANNELS_ACCOUNTS)
+            .insert({
+              channel_id: channel_id,
+              account_id: bot.account_id
+            })
+
+          if (joinError) {
+            console.error('Failed to add bot to channel:', joinError)
+            return {
+              success: true,
+              content: message as Message
+            }
+          }
+        }
+
+        // Query similar messages
+        console.log('Querying similar messages...')
+        const result = await this.pineconeService.findSimilar(
+          channel.network_id,
+          content.slice(5), // Remove /ask prefix
+          channel_id
+        );
+
+        if (!result.success) {
+          console.error('Failed to get similar messages:', result.error)
+          return {
+            success: true,
+            content: message as Message
+          }
+        }
+
+        // Create bot response with the generated response
+        const { data: botMessage, error: botError } = await this.supabase.rpc('fn_create_message', {
+          p_channel_id: channel_id,
+          p_account_id: bot.account_id,
+          p_content: result.response || 'Sorry, I could not generate a response at this time.',
+          p_meta: { is_bot: true, in_response_to: message.message_id },
+          p_pvector: null
+        })
+
+        console.log('Bot response result:', { botMessage, botError })
+
+        if (botError) {
+          console.error('Failed to create bot response:', botError)
+        } else {
+          // Sync bot message to Pinecone
+          await this.syncMessageToPinecone(botMessage as Message, channel.network_id);
+        }
+      }
+
       return {
         success: true,
-        content: data as Message
+        content: message as Message
       }
     } catch (error) {
       console.error('Message creation error:', error)

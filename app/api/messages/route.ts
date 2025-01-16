@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/server';
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { z } from "zod";
 import { ServiceManager } from "@/services/service-manager";
+import { PineconeService } from "@/services/pinecone-service";
 
 const pinecone = new Pinecone({
     apiKey: process.env.PINECONE_API_KEY!,
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
     console.log('Received RAG request');
     const supabase = await createClient();
     const service_manager = ServiceManager.initialize(supabase);
+    const pineconeService = new PineconeService();
 
     try {
         // Validate request body
@@ -116,6 +118,14 @@ export async function POST(request: Request) {
                 { success: false, error: result.failure?.message },
                 { status: 500 }
             );
+        }
+
+        // 6. Sync bot response to Pinecone
+        if (result.content) {
+            const syncResult = await pineconeService.syncMessage(result.content);
+            if (!syncResult.success) {
+                console.error('Failed to sync bot message to Pinecone:', syncResult.error);
+            }
         }
 
         return NextResponse.json({ success: true });
