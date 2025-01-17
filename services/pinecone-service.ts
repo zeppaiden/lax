@@ -40,7 +40,7 @@ export class PineconeService {
 
   async findSimilar(networkId: string, content: string, channelId: string): Promise<SimilarMessagesResult> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/messages/similar`, {
+      const response = await fetch('/api/messages/similar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ export class PineconeService {
 
   async generateSummary(content: string): Promise<SimilarMessagesResult> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/messages/summary`, {
+      const response = await fetch('api/messages/summary', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
