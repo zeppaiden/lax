@@ -13,7 +13,7 @@ const pinecone = new Pinecone({
 
 const embeddings = new OpenAIEmbeddings({
     openAIApiKey: process.env.OPENAI_API_KEY,
-    modelName: "text-embedding-3-small"
+    modelName: "text-embedding-3-large"
 });
 
 // Define request schema
@@ -21,6 +21,36 @@ const messageSchema = z.object({
     channel_id: z.string().uuid(),
     content: z.string().min(1).max(2000),
 });
+
+// Add type definitions for Pinecone response
+type PineconeMatch = {
+    id: string;
+    score: number;
+    values: number[];
+    metadata: {
+        channel_id: string;
+        content: string;
+        created_at: string;
+        created_at_timestamp: string;
+        created_by: string;
+        has_attachments: string;
+        in_response_to: string;
+        is_bot_message: string;
+        message_id: string;
+        meta_json: string;
+        network_id: string;
+        updated_at: string;
+        updated_at_timestamp: string;
+    };
+};
+
+type PineconeResponse = {
+    matches: PineconeMatch[];
+    namespace: string;
+    usage: {
+        readUnits: number;
+    };
+};
 
 export async function POST(request: Request) {
     console.log('Received RAG request');
@@ -56,18 +86,50 @@ export async function POST(request: Request) {
 
         // 2. Query Pinecone with the embedding
         console.log('Querying Pinecone...');
-        const index = await pinecone.Index(process.env.PINECONE_INDEX_TWO!);
+        const index = await pinecone.Index("messages");
         const queryResponse = await index.query({
             vector: vector,
             topK: 3,
+            filter: {
+                network_id: channel.network_id
+            },
             includeMetadata: true,
+        }) as PineconeResponse;
+        console.log('Pinecone response:', JSON.stringify(queryResponse, null, 2));
+
+        // Verify the response structure
+        if (!queryResponse.matches || !Array.isArray(queryResponse.matches)) {
+            console.error('Invalid Pinecone response structure:', queryResponse);
+            return NextResponse.json(
+                { success: false, error: 'Invalid response from similarity search' },
+                { status: 500 }
+            );
+        }
+
+        // Log each match for debugging
+        queryResponse.matches.forEach((match, index) => {
+            console.log(`Match ${index + 1}:`, {
+                id: match.id,
+                score: match.score,
+                metadata: match.metadata
+            });
         });
-        console.log('Pinecone response:', queryResponse);
 
         // 3. Format context and generate response
         const context = queryResponse.matches
-            .map((match: any) => match.metadata?.text)
-            .join('\n');
+            .map((match: PineconeMatch) => {
+                if (!match.metadata?.content) {
+                    console.warn('Match missing content:', match);
+                    return null;
+                }
+                // Only include non-bot messages in context to avoid repetition
+                if (match.metadata.is_bot_message === "true") {
+                    return null;
+                }
+                return `Similar message (${Math.round(match.score * 100)}% match):\n${match.metadata.content}`;
+            })
+            .filter(Boolean)
+            .join('\n\n');
         console.log('Formatted context:', context);
 
         const { data: previous_messages, error: previous_messages_error } = await supabase
@@ -87,14 +149,13 @@ export async function POST(request: Request) {
 
         const formattedMessages = previous_messages
             .reverse() // Reverse to get chronological order
-            .map((message: any) => `${message.role === 'assistant' ? 'Deadpool' : 'User'}: ${message.content}`)
+            .map((message: any) => `${message.role === 'assistant' ? 'Bot McBotface' : 'User'}: ${message.content}`)
             .join('\n\n');
 
         const formattedPrompt = await ragPromptTemplate.format({
             context,
             question: content,
-            character: 'Deadpool',
-            previous_messages: formattedMessages
+            history: formattedMessages
         });
         console.log('Formatted prompt:', formattedPrompt);
         const response = await chatModel.invoke(formattedPrompt, {
@@ -102,33 +163,10 @@ export async function POST(request: Request) {
         });
         console.log('LLM response:', response);
 
-        // 5. Store response in Supabase
-        const result = await service_manager.messages.createMessage(
-            channel_id,
-            'd9d2c190-fee1-4ef7-9c2e-9dfdcda17c2f', // Deadpool Replica
-            response.content.toString(),
-            {},
-            undefined
-        )
-        console.log('Result:', result)
-
-        if (!result.success) {
-            console.error('Error storing message:', result.failure?.message);
-            return NextResponse.json(
-                { success: false, error: result.failure?.message },
-                { status: 500 }
-            );
-        }
-
-        // 6. Sync bot response to Pinecone
-        if (result.content) {
-            const syncResult = await pineconeService.syncMessage(result.content);
-            if (!syncResult.success) {
-                console.error('Failed to sync bot message to Pinecone:', syncResult.error);
-            }
-        }
-
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ 
+            success: true, 
+            response: response.content.toString() 
+        });
 
     } catch (error) {
         console.error('RAG error:', error);

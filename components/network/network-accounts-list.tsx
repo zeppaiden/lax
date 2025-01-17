@@ -38,39 +38,49 @@ export function NetworkAccountsList() {
 
   React.useEffect(() => {
     const initialize = async () => {
-      if (!current_network?.network_id) return;
-
-      const accounts_result = await service_manager.networks.selectAccounts(
-        current_network.network_id
-      );
-
-      if (!accounts_result.success) {
-        toast.error(accounts_result.failure?.message, {
-          description: accounts_result.failure?.context,
-        });
+      if (!current_network?.network_id) {
+        console.warn('No network ID available, skipping account fetch');
         return;
       }
 
-      setAccounts(accounts_result.content || []);
+      try {
+        const accounts_result = await service_manager.networks.selectAccounts(
+          current_network.network_id
+        );
 
-      // Subscribe to network events for accounts
-      const subscription_result = await service_manager.networks.subscribe({
-        network_id: current_network.network_id,
-        onAccountCreate: handleCreateAccount,
-        onAccountUpdate: handleUpdateAccount,
-        onAccountDelete: handleDeleteAccount,
-      });
+        if (!accounts_result.success) {
+          console.warn('Failed to fetch network accounts:', accounts_result.failure);
+          toast.error(accounts_result.failure?.message, {
+            description: accounts_result.failure?.context,
+          });
+          return;
+        }
 
-      if (!subscription_result.success) {
-        toast.error(subscription_result.failure?.message, {
-          description: subscription_result.failure?.context,
+        setAccounts(accounts_result.content || []);
+
+        // Subscribe to network events for accounts
+        const subscription_result = await service_manager.networks.subscribe({
+          network_id: current_network.network_id,
+          onAccountCreate: handleCreateAccount,
+          onAccountUpdate: handleUpdateAccount,
+          onAccountDelete: handleDeleteAccount,
         });
-        return;
-      }
 
-      return () => {
-        subscription_result.content?.unsubscribe();
-      };
+        if (!subscription_result.success) {
+          console.warn('Failed to subscribe to network accounts:', subscription_result.failure);
+          toast.error(subscription_result.failure?.message, {
+            description: subscription_result.failure?.context,
+          });
+          return;
+        }
+
+        return () => {
+          subscription_result.content?.unsubscribe();
+        };
+      } catch (error) {
+        console.error('Error initializing network accounts:', error);
+        toast.error('Failed to initialize network accounts');
+      }
     };
 
     initialize();

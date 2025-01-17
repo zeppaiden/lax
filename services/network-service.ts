@@ -411,6 +411,53 @@ export class NetworkService {
     }
   }
 
+  async removeAccount(
+    network_id: string,
+    account_id: string
+  ): Promise<Result<void>> {
+    try {
+      this.uuid_schema.parse(network_id)
+      this.uuid_schema.parse(account_id)
+
+      const { error } = await this.supabase.rpc('fn_remove_network_account', {
+        p_network_id: network_id,
+        p_account_id: account_id
+      })
+
+      if (error) {
+        return {
+          success: false,
+          failure: {
+            code: 'REMOVE_FAILED',
+            message: 'Failed to remove account from network',
+            context: error.message
+          }
+        }
+      }
+
+      return { success: true }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return {
+          success: false,
+          failure: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid input parameters',
+            context: error.errors.map(e => e.message).join(', ')
+          }
+        }
+      }
+
+      return {
+        success: false,
+        failure: {
+          code: 'UNKNOWN_ERROR',
+          message: 'An unexpected error occurred'
+        }
+      }
+    }
+  }
+
   async deleteAccount(
     network_id: string,
     account_id: string

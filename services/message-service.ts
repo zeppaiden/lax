@@ -50,6 +50,16 @@ export class MessageService {
 
   private async syncMessageToPinecone(message: Message, network_id: string) {
     try {
+      // Add validation for required fields
+      if (!message.message_id || !message.channel_id || !network_id) {
+        console.warn('Missing required fields for Pinecone sync:', {
+          message_id: message.message_id,
+          channel_id: message.channel_id,
+          network_id: network_id
+        });
+        return;
+      }
+
       console.log('🔄 Attempting to sync message to Pinecone:', {
         message_id: message.message_id,
         channel_id: message.channel_id,
@@ -166,8 +176,9 @@ export class MessageService {
         }
       }
 
-      // Sync message to Pinecone
-      await this.syncMessageToPinecone(message as Message, channel.network_id);
+      // Fire and forget - runs in background
+      this.syncMessageToPinecone(message as Message, channel.network_id)
+        .catch(error => console.error('Background Pinecone sync failed:', error));
 
       // If this is a primary channel and message starts with /ask, create an automatic response
       if (channel.type === 'primary' && content.trim().toLowerCase().startsWith('/ask')) {
@@ -246,7 +257,8 @@ export class MessageService {
           console.error('Failed to create bot response:', botError)
         } else {
           // Sync bot message to Pinecone
-          await this.syncMessageToPinecone(botMessage as Message, channel.network_id);
+          this.syncMessageToPinecone(botMessage as Message, channel.network_id)
+            .catch(error => console.error('Background Pinecone sync failed:', error));
         }
       }
 
@@ -761,6 +773,189 @@ export class MessageService {
           code: 'UNKNOWN_ERROR',
           message: 'An unexpected error occurred',
           context: error instanceof Error ? error.message : undefined
+        }
+      }
+    }
+  }
+
+  async pinMessage(
+    message_id: string,
+    account_id: string
+  ): Promise<Result<Message>> {
+    try {
+      this.uuid_schema.parse(message_id)
+      this.uuid_schema.parse(account_id)
+
+      const { data, error } = await this.supabase.rpc('fn_pin_message', {
+        p_message_id: message_id,
+        p_account_id: account_id
+      })
+
+      if (error) {
+        return {
+          success: false,
+          failure: {
+            code: 'PIN_FAILED',
+            message: 'Failed to pin message',
+            context: error.message
+          }
+        }
+      }
+
+      return {
+        success: true,
+        content: data as Message
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return {
+          success: false,
+          failure: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid input parameters',
+            context: error.errors.map(e => e.message).join(', ')
+          }
+        }
+      }
+
+      return {
+        success: false,
+        failure: {
+          code: 'UNKNOWN_ERROR',
+          message: 'An unexpected error occurred'
+        }
+      }
+    }
+  }
+
+  async unpinMessage(
+    message_id: string,
+    account_id: string
+  ): Promise<Result<Message>> {
+    try {
+      this.uuid_schema.parse(message_id)
+      this.uuid_schema.parse(account_id)
+
+      const { data, error } = await this.supabase.rpc('fn_unpin_message', {
+        p_message_id: message_id,
+        p_account_id: account_id
+      })
+
+      if (error) {
+        return {
+          success: false,
+          failure: {
+            code: 'UNPIN_FAILED',
+            message: 'Failed to unpin message',
+            context: error.message
+          }
+        }
+      }
+
+      return {
+        success: true,
+        content: data as Message
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return {
+          success: false,
+          failure: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid input parameters',
+            context: error.errors.map(e => e.message).join(', ')
+          }
+        }
+      }
+
+      return {
+        success: false,
+        failure: {
+          code: 'UNKNOWN_ERROR',
+          message: 'An unexpected error occurred'
+        }
+      }
+    }
+  }
+
+  async selectPinnedMessages(
+    channel_id: string
+  ): Promise<Result<Message[]>> {
+    try {
+      this.uuid_schema.parse(channel_id)
+
+      const { data, error } = await this.supabase
+        .from(TableName.MESSAGES)
+        .select()
+        .eq('channel_id', channel_id)
+        .not('pinned_at', 'is', null)
+        .order('pinned_at', { ascending: false })
+
+      if (error) {
+        return {
+          success: false,
+          failure: {
+            code: 'SELECT_FAILED',
+            message: 'Failed to retrieve pinned messages',
+            context: error.message
+          }
+        }
+      }
+
+      return {
+        success: true,
+        content: data as Message[]
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return {
+          success: false,
+          failure: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid channel ID format',
+            context: error.errors.map(e => e.message).join(', ')
+          }
+        }
+      }
+
+      return {
+        success: false,
+        failure: {
+          code: 'UNKNOWN_ERROR',
+          message: 'An unexpected error occurred'
+        }
+      }
+    }
+  }
+
+  async summarizeSearchResults(
+    content: string
+  ): Promise<Result<string>> {
+    try {
+      const result = await this.pineconeService.generateSummary(content)
+      
+      if (!result.success) {
+        return {
+          success: false,
+          failure: {
+            code: 'SUMMARY_FAILED',
+            message: 'Failed to generate summary',
+            context: result.error
+          }
+        }
+      }
+
+      return {
+        success: true,
+        content: result.response
+      }
+    } catch (error) {
+      return {
+        success: false,
+        failure: {
+          code: 'SUMMARY_ERROR',
+          message: 'Error generating summary',
+          context: error instanceof Error ? error.message : 'Unknown error'
         }
       }
     }

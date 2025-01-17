@@ -6,10 +6,10 @@ import { Hash } from "lucide-react";
 import { Channel } from "@/services/types";
 import { SidebarMenuSubButton, SidebarMenuSubItem } from "@/components/ui/sidebar";
 import { useServiceContext } from "@/contexts/page";
-import { ChannelDeleteForm } from "@/components/channel/channel-delete-form";
+import { ChannelOptionsMenu } from "@/components/channel/channel-options-menu";
 
 export function NetworkChannelsItem({ channel }: { channel: Channel }) {
-  const { current_account, current_network, current_channel,setCurrentChannel, setCurrentSpinoff } = useServiceContext();
+  const { current_channel, setCurrentChannel, setCurrentSpinoff } = useServiceContext();
 
   return (
     <SidebarMenuSubItem key={channel.channel_id}>
@@ -25,11 +25,9 @@ export function NetworkChannelsItem({ channel }: { channel: Channel }) {
             <Hash className="size-6 pr-2" />
             <span>{channel.name}</span>
           </div>
-          {current_account?.account_id === current_network?.created_by && (
-            <div className="opacity-0 transition-opacity hover:opacity-100">
-              <ChannelDeleteForm channel={channel} />
-            </div>
-          )}
+          <div className="opacity-0 transition-opacity hover:opacity-100">
+            <ChannelOptionsMenu channel={channel} />
+          </div>
         </div>
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>

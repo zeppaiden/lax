@@ -207,37 +207,15 @@ export class AccountService {
 
   async updateAccount(
     account_id: string,
-    email?: string,
-    uname?: string,
-    fname?: string,
-    lname?: string,
-    robot?: boolean,
-    is_offline?: boolean
+    updates: Partial<Account>
   ): Promise<Result<Account>> {
     try {
-      this.uuid_schema.parse(account_id)
-      this.account_schema.partial().parse({
-        email,
-        uname,
-        fname,
-        lname,
-        robot,
-        is_offline
-      })
-
       const { data, error } = await this.supabase
-        .from(TableName.ACCOUNTS)
-        .update({
-          ...(email && { email }),
-          ...(uname && { uname }),
-          ...(fname && { fname }),
-          ...(lname && { lname }),
-          ...(robot !== undefined && { robot }),
-          is_offline
-        })
+        .from('accounts')
+        .update(updates)
         .eq('account_id', account_id)
         .select()
-        .single()
+        .single();
 
       if (error) {
         return {
@@ -247,32 +225,22 @@ export class AccountService {
             message: 'Failed to update account',
             context: error.message
           }
-        }
+        };
       }
 
       return {
         success: true,
         content: data as Account
-      }
+      };
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return {
-          success: false,
-          failure: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid account data',
-            context: error.errors.map(e => e.message).join(', ')
-          }
-        }
-      }
-
       return {
         success: false,
         failure: {
-          code: 'UNKNOWN_ERROR',
-          message: 'An unexpected error occurred'
+          code: 'UPDATE_FAILED',
+          message: 'Failed to update account',
+          context: error instanceof Error ? error.message : undefined
         }
-      }
+      };
     }
   }
 

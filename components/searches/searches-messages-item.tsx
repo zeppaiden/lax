@@ -127,7 +127,7 @@ export function SearchesMessagesItem({ result }: SearchesMessagesItemProps) {
         <div 
           className="text-muted-foreground mb-2"
           dangerouslySetInnerHTML={{ __html: result.message.content.replace(
-            new RegExp(result.highlight.text.replace(/<\/?mark>/g, ''), 'gi'),
+            new RegExp(result.highlight.text.replace(/<\/?mark>/g, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
             (match: string) => `<mark>${match}</mark>`
           )}}
         />

@@ -81,6 +81,10 @@ export function AccountProfile() {
     router.push("/")
   }
 
+  const handleNavigateToSettings = (path: string) => {
+    router.push(`/protected/settings/${path}`)
+  }
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -123,7 +127,7 @@ export function AccountProfile() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem disabled title="Coming soon!">
+              <DropdownMenuItem onClick={() => handleNavigateToSettings("account")}>
                 <BadgeCheck />
                 Account
               </DropdownMenuItem>
@@ -131,11 +135,11 @@ export function AccountProfile() {
                 <CircleDot className={cn(current_account?.is_offline ? "text-red-500" : "text-green-500", "size-4")} />
                 Status <span className="text-xs text-muted-foreground ml-1">{current_account?.is_offline ? "(offline)" : "(online)"}</span>
               </DropdownMenuItem>
-              <DropdownMenuItem disabled title="Coming soon!">
+              <DropdownMenuItem onClick={() => handleNavigateToSettings("notifications")}>
                 <Bell />
                 Notifications
               </DropdownMenuItem>
-              <DropdownMenuItem disabled title="Coming soon!">
+              <DropdownMenuItem onClick={() => handleNavigateToSettings("settings")}>
                 <Settings />
                 Settings
               </DropdownMenuItem>

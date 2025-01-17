@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { Download, FileIcon, Loader2 } from "lucide-react"
+import { Download, FileIcon, Loader2, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
+import ReactMarkdown from 'react-markdown'
 
 import { Account, Message } from "@/services/types"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -31,6 +32,7 @@ export function MessageBubbleItem({
   account, 
 }: MessageBubbleItemProps) {
   const { service_manager } = useServiceContext()
+  const [showMarkdown, setShowMarkdown] = React.useState(true)
   
   const reactions = React.useMemo(() => {
     if (!message.meta) return [];
@@ -109,12 +111,30 @@ export function MessageBubbleItem({
               </span>
             )}
           </div>
-          <MessageBubbleMenubar message={message} />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setShowMarkdown(!showMarkdown)}
+            >
+              {showMarkdown ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </Button>
+            <MessageBubbleMenubar message={message} />
+          </div>
         </div>
 
         <Card className="max-w-[85%]">
           <CardContent className="p-3 font-sans">
-            {message.content}
+            {showMarkdown ? (
+              <ReactMarkdown>{message.content}</ReactMarkdown>
+            ) : (
+              <pre className="whitespace-pre-wrap font-mono text-sm">{message.content}</pre>
+            )}
           </CardContent>
           {reactions.length > 0 && (
             <CardFooter className="flex flex-wrap gap-2">

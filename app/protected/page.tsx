@@ -23,6 +23,7 @@ import { MessageArea } from "@/components/message/message-area"
 import { ChannelType } from "@/services/types"
 import { ModeToggle } from "@/components/mode-toggle"
 import { SearchesOpenDrawer } from "@/components/searches/searches-open-drawer"
+import { PinnedMessagesDrawer } from "@/components/message/pinned-messages-drawer"
 
 export default function Page() {
   const { 
@@ -77,6 +78,9 @@ export default function Page() {
               </Breadcrumb>
             </div>
             <div className="ml-auto flex items-center gap-2">
+              {current_channel && (
+                <PinnedMessagesDrawer channel_id={current_channel.channel_id} />
+              )}
               <SearchesOpenDrawer />
               <Separator orientation="vertical" className="h-4" />
               <ModeToggle />

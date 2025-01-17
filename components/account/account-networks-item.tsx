@@ -4,9 +4,7 @@ import * as React from "react"
 import { Command } from "lucide-react"
 import { Network } from "@/services/types"
 import { useServiceContext } from "@/contexts/page"
-import { NetworkDeleteForm } from "@/components/network/network-delete-form"
-import { Button } from "@/components/ui/button"
-import { Trash2 } from "lucide-react"
+import { NetworkOptionsMenu } from "@/components/network/network-options-menu"
 
 export function AccountNetworksItem({
   network,
@@ -15,8 +13,6 @@ export function AccountNetworksItem({
   network: Network
   onClick?: (network: Network) => void
 }) {
-  const { current_account } = useServiceContext()
-
   return (
     <div className="group flex w-full items-center justify-between">
       <div
@@ -28,19 +24,9 @@ export function AccountNetworksItem({
         </div>
         <span className="flex-1 truncate">{network.name}</span>
       </div>
-      {network.created_by === current_account?.account_id && (
-        <div className="ml-auto">
-          <NetworkDeleteForm network={network}>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          </NetworkDeleteForm>
-        </div>
-      )}
+      <div className="ml-auto opacity-0 group-hover:opacity-100">
+        <NetworkOptionsMenu network={network} />
+      </div>
     </div>
   )
 }

@@ -1,0 +1,98 @@
+[
+  {
+    "account_id": "c1e8c0d2-b50e-4bdb-ac6b-405e27b30b6d",
+    "fname": "Thomas",
+    "lname": "Anderson",
+    "uname": "the_one_neo",
+    "email": "neo@matrix.sys",
+    "is_offline": false,
+    "created_at": "2025-01-16 19:25:08.380315",
+    "character_name": "Neo",
+    "universe": "The Matrix",
+    "quote": "I know kung fu"
+  },
+  {
+    "account_id": "ef963054-feb8-4934-b544-299932fb8667",
+    "fname": "Tony",
+    "lname": "Stark",
+    "uname": "ironman_3000",
+    "email": "tony.stark@starkindustries.ai",
+    "is_offline": false,
+    "created_at": "2025-01-16 19:25:08.380315",
+    "character_name": "Iron Man",
+    "universe": "Marvel",
+    "quote": "I am Iron Man"
+  },
+  {
+    "account_id": "a322123e-e701-4613-928e-7717ec6473aa",
+    "fname": "Jack",
+    "lname": "Sparrow",
+    "uname": "captain_jack_sparrow",
+    "email": "captain@blackpearl.sea",
+    "is_offline": false,
+    "created_at": "2025-01-16 19:25:08.380315",
+    "character_name": "Captain Jack Sparrow",
+    "universe": "Pirates of the Caribbean",
+    "quote": "Why is the rum gone?"
+  },
+  {
+    "account_id": "d4c61583-37d4-41e1-ba10-698500eb057e",
+    "fname": "Tyler",
+    "lname": "Durden",
+    "uname": "project_mayhem",
+    "email": "tyler@soap.club",
+    "is_offline": false,
+    "created_at": "2025-01-16 19:25:08.380315",
+    "character_name": "Tyler Durden",
+    "universe": "Fight Club",
+    "quote": "The first rule of Fight Club is: you do not talk about Fight Club"
+  },
+  {
+    "account_id": "b5736eb3-c105-46db-a476-b53ce720c892",
+    "fname": "Shrek",
+    "lname": "Ogre",
+    "uname": "onion_layers",
+    "email": "shrek@swamp.far.far.away",
+    "is_offline": false,
+    "created_at": "2025-01-16 19:25:08.380315",
+    "character_name": "Shrek",
+    "universe": "Shrek",
+    "quote": "Ogres are like onions"
+  },
+  {
+    "account_id": "d9d2c190-fee1-4ef7-9c2e-9dfdcda17c2f",
+    "fname": "Dead",
+    "lname": "Pool",
+    "uname": "RegeneratingDegenerate",
+    "email": "MercWithAMouth@chimichanga.com",
+    "is_offline": true,
+    "created_at": "2025-01-14 20:25:04.037504",
+    "character_name": null,
+    "universe": null,
+    "quote": null
+  },
+  {
+    "account_id": "550e8400-e29b-41d4-a716-446655440000",
+    "fname": "Test",
+    "lname": "Replica",
+    "uname": "test_replica",
+    "email": "test.replica@example.com",
+    "is_offline": true,
+    "created_at": "2025-01-14 02:47:36.479748",
+    "character_name": null,
+    "universe": null,
+    "quote": null
+  },
+  {
+    "account_id": "d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+    "fname": "Bot",
+    "lname": "McBotface",
+    "uname": "botty",
+    "email": "botty@test.com",
+    "is_offline": true,
+    "created_at": "2025-01-12 05:22:14.510623",
+    "character_name": null,
+    "universe": null,
+    "quote": null
+  }
+]

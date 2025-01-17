@@ -1,7 +1,7 @@
 # TODO Items
 
 ## IMMEDIATE
-- [ ] Add `meta` columns to the tables in the database
+- [x] Add `meta` columns to the tables in the database
   - These columns should be used for storing metadata about the row
   - These columns should be used for storing information that is not part of the row's data
   - These columns should not be used excessively, if possible
@@ -58,7 +58,7 @@
         - The voice should be able to be customized
         - The voice, if not customized, should be match what the user's behavior indicates
 
-- [X] Fix payloads not being downloadable after being uploaded and sent
+- [x] Fix payloads not being downloadable after being uploaded and sent
   - Currently, the payloads are uploading properly, being sent without issue, are arriving in the Supabase storage bucket, but are not able to be downloaded. When downloading, the filename is automatically '404' and the file is not found.
   - The suspicion as of now is that the signing path is incorrect.
 - [ ] Fix the payloads' path to be `{network_id}/{channel_id}/{message_id}/{filename}.{extension}`
@@ -71,39 +71,39 @@
 - [ ] Switch to using a custom SMTP server for email
   - Currently, Supabase rate-limits emails, causing authentication issues when trying to sign in or sign up with email.
 
-- [ ] Message formatting
-  - [ ] Messages should be formatted with markdown
-    - [ ] Bold
-    - [ ] Italics
-    - [ ] Underline
-    - [ ] Strikethrough
-    - [ ] Code
-    - [ ] Code block
-      - [ ] The code block should be formatted with the language of the code
-    - [ ] Link
-    - [ ] List
-    - [ ] Quote (optional)
-    - [ ] Heading (optional)
-    - [ ] Horizontal rule (optional)
-    - [ ] Table (optional)
-    - [ ] Reaction
-  - [ ] The MessageInputArea should have a button for each of the core message formatting options
-    - [ ] Bold
-    - [ ] Italics
-    - [ ] Underline
-    - [ ] Code block
-      - [ ] Clicking on the code block button should display a dropdown menu with the languages of the supported code block types
-    - [ ] Emoji
-  - [ ] The message formatting options should be displayed above/below the message input area
-  - [ ] While creating a message in the MessageInputArea, the text should be transformed into the appropriate message formatting (optional)
-    - [ ] Bold
-    - [ ] Italics
-    - [ ] Underline
-    - [ ] Code block
-      - [ ] The code block should be formatted and highlighted with the language of the code
-    - [ ] Link
-    - [ ] List
-    - [ ] Emoji (optional)
+- [x] Message formatting
+  - [x] Messages should be formatted with markdown
+    - [x] Bold
+    - [x] Italics
+    - [x] Underline
+    - [x] Strikethrough
+    - [x] Code
+    - [x] Code block
+      - [x] The code block should be formatted with the language of the code
+    - [x] Link
+    - [x] List
+    - [x] Quote (optional)
+    - [x] Heading (optional)
+    - [x] Horizontal rule (optional)
+    - [x] Table (optional)
+    - [x] Reaction
+  - [x] The MessageInputArea should have a button for each of the core message formatting options
+    - [x] Bold
+    - [x] Italics
+    - [x] Underline
+    - [x] Code block
+      - [x] Clicking on the code block button should display a dropdown menu with the languages of the supported code block types
+    - [x] Emoji
+  - [x] The message formatting options should be displayed above/below the message input area
+  - [x] While creating a message in the MessageInputArea, the text should be transformed into the appropriate message formatting (optional)
+    - [x] Bold
+    - [x] Italics
+    - [x] Underline
+    - [x] Code block
+      - [x] The code block should be formatted and highlighted with the language of the code
+    - [x] Link
+    - [x] List
+    - [x] Emoji (optional)
     - For example, if the user types '*' and then a character, the '*' and following text should be transformed into a bold formatting
     - For example, if the user types '`' and then a normal ascii character, the '`' and following text should be transformed into a code block formatting
     - For example, if the user types '```' and then shift+enter, the '```' and following text should be transformed into a code block formatting
@@ -114,9 +114,9 @@
     - Use Anthropic's input markdown formatting as a reference
 
 
-- [ ] Editing messages
-  - [ ] Messages should be editable
-  - [ ] Removing a mention from a message should remove any display effects for the mentioned account
+- [x] Editing messages
+  - [x] Messages should be editable
+  - [x] Removing a mention from a message should remove any display effects for the mentioned account
 
 - [ ] Mentioning accounts
   - [ ] Mentioning an account should display the account's name in message with a mention effect (e.g., use the shadcn badge component to make it look like a badge and differentiate color)
@@ -167,8 +167,8 @@
   - [ ] The user should be able to leave a whisper (details TBD)
   - [ ] The user should be able to create a whisper with themselves (i.e., note to self)
 
-- [ ] Spinoffs
-  - [ ] The spinoff button in the MessageBubbleMenubar should indicate the number of messages in the spinoff
+- [x] Spinoffs
+  - [x] The spinoff button in the MessageBubbleMenubar should indicate the number of messages in the spinoff
 
 - [ ] Searching
   - [ ] Searching for accounts
@@ -184,12 +184,12 @@
     - [ ] The messages returned should be clickable and takes the user to the message
       - [ ] Scroll to the message in the message bubbles list
 
-- [ ] Media
-  - [ ] Common media types should be displayed in the message bubbles area
-    - [ ] Images should be displayed as their image preview, not the normal download icon
-    - [ ] Videos should be displayed with a media player, not the normal download icon
-    - [ ] Audio should be displayed with a media player, not the normal download icon
-  - [ ] Support for recording audio and video from the message input area using the device's microphone and/or camera
+- [x] Media
+  - [x] Common media types should be displayed in the message bubbles area
+    - [x] Images should be displayed as their image preview, not the normal download icon
+    - [x] Videos should be displayed with a media player, not the normal download icon
+    - [x] Audio should be displayed with a media player, not the normal download icon
+  - [x] Support for recording audio and video from the message input area using the device's microphone and/or camera
 
 - [ ] Friends
   - [ ] The user should be able to add friends to their friends list
@@ -238,23 +238,23 @@
 - [ ] When first loading the page, the networks list glitches out and keeps switching the networks order
 - [ ] Only allow N number of payloads to be attached to a message
 - [ ] The selected network and channel should be distinguishable from the other networks and channels
-- [ ] Should be able to send an empty message with a payload
+- [x] Should be able to send an empty message with a payload
 - [ ] Payloads should be downloadable
   - Currently has a 404 error
 - [ ] Accounts' statuses in the NetworkAccountsList should update in real-time to account status changes
 - [x] When a new user joins a network, the old messages in the channel are displayed with said user's name, not the user's name who sent the message originally
   - Need to confirm this bug exists
-- [ ] Account's status should immediately be set to online when logging in for the first time
+  - Bug was fixed by properly handling message context and account data
+- [x] Account's status should immediately be set to online when logging in for the first time
   - This should already be handled by the database having `is_offline` set to `false` by default
   - Double-check the default for the `is_offline` column in the database
-- [ ] The MessageInputArea's text input should be focused when the MessageInputArea is mounted and after a message is sent
-- [ ] Changing networks
-  - [ ] The selected channel (and spinoff, if applicable) should be cleared
-    - They might already be, but double-check
-  - [ ] The breadcrumbs' channel and spinoff should be cleared when switching networks
-    - This might be an issue of the channel and spinoff not being cleared when switching networks, rather than a breadcrumb issue
-  - [ ] The MessageInputArea should be cleared when switching networks
-  - [ ] The MessageBubblesList should be cleared when switching networks
+  - Confirmed: The `is_offline` column has a default value of `true` in the database schema
+- [x] The MessageInputArea's text input should be focused when the MessageInputArea is mounted and after a message is sent
+- [x] Changing networks
+  - [x] The selected channel (and spinoff, if applicable) should be cleared
+  - [x] The breadcrumbs' channel and spinoff should be cleared when switching networks
+  - [x] The MessageInputArea should be cleared when switching networks
+  - [x] The MessageBubblesList should be cleared when switching networks
 - [ ] The reaction menu is improperly rendered outside of the page when using the reaction feature for a message at the top of the page
   - [ ] Messages above a certain height should have the reaction menu rendered upwards of the page
   - [ ] Messages below a certain height should have the reaction menu rendered downwards of the page
@@ -262,11 +262,11 @@
   - If the spinoffs are still receiving their own copy of the original message to satisfy the database constraints, then we need to make sure the entire message is being copied, meta and all
 
 ## Misc.
-- [ ] Keyboard shortcuts when creating a message
-  - [ ] When creating a message, the user should be able to use the keyboard shortcuts to format the message
-    - [ ] Bold with CMD+B
-    - [ ] Italics with CMD+I
-    - [ ] Underline with CMD+U
+- [x] Keyboard shortcuts when creating a message
+  - [x] When creating a message, the user should be able to use the keyboard shortcuts to format the message
+    - [x] Bold with CMD+B
+    - [x] Italics with CMD+I
+    - [x] Underline with CMD+U
 
 - [ ] Change the default font of the UI to something more modern
   - Anthropic's font for the Claude interface is really nice
@@ -277,22 +277,20 @@
   - [ ] Add a toast notification when a message is edited
   - [ ] Add a toast notification when a message is deleted
 
-- [ ] Loading states
-  - [ ] Add a loading state to the message bubbles area
-  - [ ] Add a loading state to the message input area
-  - [ ] Add a loading state to the networks list
-  - [ ] Add a loading state to the channels list
-  - [ ] Add a loading state to the whispers list
-  - [ ] Add a loading state to the accounts list
+- [x] Loading states
+  - [x] Add a loading state to the message bubbles area
+  - [x] Add a loading state to the message input area
+  - [x] Add a loading state to the networks list
+  - [x] Add a loading state to the channels list
+  - [x] Add a loading state to the whispers list
+  - [x] Add a loading state to the accounts list
 
-- [ ] Transitions
-  - [ ] Add a transition when transitioning between networks
-  - [ ] Add a transition when transitioning between channels
-    - [ ] The messages area should have a transition between the old messages and the new messages
-      - For example, a simple skeleton loader could be displayed while the messages are being transitioned
-      - For example, a simple spinner could be displayed while the messages are being transitioned
-  - [ ] Add a transition when transitioning between channel and spinoff
-  - [ ] Add a transition when a message appears in the message bubbles area
+- [x] Transitions
+  - [x] Add a transition when transitioning between networks
+  - [x] Add a transition when transitioning between channels
+    - [x] The messages area should have a transition between the old messages and the new messages
+  - [x] Add a transition when transitioning between channel and spinoff
+  - [x] Add a transition when a message appears in the message bubbles area
 
   - [ ] Animations
     - [ ] Add an animation when a message appears in the message area
@@ -393,12 +391,12 @@
 - [ ] Users should be able to pin channels in their sidebar's channels list (details TBD)
 - [ ] Users should be able to pin messages (details TBD)
 
-- [ ] Optimistic rendering of messages when sent
-  - [ ] The message should be displayed in the message bubbles area before the message is actually sent
-  - [ ] If the message fails to send, the message should be replaced
-    - [ ] A toast notification should be displayed to the user indicating the message failed to send
-    - [ ] The message should say "Message failed to send" (or something similar; details TBD)
-    - [ ] The toast notification should have a button to retry the message
+- [x] Optimistic rendering of messages when sent
+  - [x] The message should be displayed in the message bubbles area before the message is actually sent
+  - [x] If the message fails to send, the message should be replaced
+    - [x] A toast notification should be displayed to the user indicating the message failed to send
+    - [x] The message should say "Message failed to send" (or something similar; details TBD)
+    - [x] The toast notification should have a button to retry the message
 
 - [ ] Shortcut/command support
   - [ ] Users can create custom shortcuts/commands for the application

@@ -37,7 +37,11 @@ export interface Account {
   uname: string;
   fname: string;
   lname: string;
-  robot: boolean;
+  robot?: boolean;
+  meta?: {
+    tts_voice?: string;
+    [key: string]: any;
+  };
 }
 
 export interface Network {
@@ -78,6 +82,8 @@ export interface Message {
   created_at: string;
   created_by: string;
   updated_at: string | null;
+  pinned_at: string | null;
+  pinned_by: string | null;
   content: string;
   tvector: string;
   meta: MessageMeta;

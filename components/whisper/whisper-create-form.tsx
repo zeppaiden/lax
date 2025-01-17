@@ -14,7 +14,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useServiceContext } from "@/contexts/page"
 import { toast } from "sonner"
-import { Account } from "@/services/types"
+import { Account, Channel } from "@/services/types"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 
@@ -22,7 +22,7 @@ export function WhisperCreateForm({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false)
   const [selectedAccountId, setSelectedAccountId] = React.useState<string>("")
   const [accounts, setAccounts] = React.useState<Account[]>([])
-  const { service_manager, current_account, current_network } = useServiceContext()
+  const { service_manager, current_account, current_network, setCurrentChannel } = useServiceContext()
 
   // Fetch network members when dialog opens
   React.useEffect(() => {
@@ -63,6 +63,7 @@ export function WhisperCreateForm({ children }: { children: React.ReactNode }) {
         description: result.failure?.context || "Please try again later",
       })
     } else {
+      setCurrentChannel(result.content as Channel | null)
       toast.success("Whisper created successfully", {
         description: "You can now start private messaging in this whisper",
       })
