@@ -12,16 +12,9 @@ export interface SimilarMessagesResult {
 }
 
 export class PineconeService {
-  private readonly baseUrl: string;
-
-  constructor() {
-    // Use environment variable or default to localhost in development
-    this.baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  }
-
   async syncMessage(message: PineconeMessage): Promise<{ success: boolean, error?: string }> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/messages/sync`, {
+      const response = await fetch('/api/messages/sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
