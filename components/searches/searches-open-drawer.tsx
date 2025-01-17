@@ -58,7 +58,7 @@ export function SearchesOpenDrawer() {
         )
         
         if (summaryResult.success) {
-          setSummary(summaryResult.content)
+          setSummary(summaryResult.content || '');
         } else {
           toast.error("Failed to generate summary", {
             description: summaryResult.failure?.message

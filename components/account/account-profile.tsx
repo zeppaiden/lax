@@ -47,8 +47,7 @@ export function AccountProfile() {
   const handleToggleStatus = async () => {
     const result = await service_manager.accounts.updateAccount(
       current_account.account_id,
-      undefined, undefined, undefined, undefined, undefined,
-      !current_account.is_offline
+      { is_offline: !current_account.is_offline }
     )
 
     if (!result.success) {

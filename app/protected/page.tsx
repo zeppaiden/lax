@@ -39,6 +39,7 @@ export default function Page() {
   React.useEffect(() => {
     service_manager.accounts.updateAccount(
       current_account.account_id,
+      current_account
     );
   }, [current_account])
 
