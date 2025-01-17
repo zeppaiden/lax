@@ -29,7 +29,6 @@ import { useServiceContext } from "@/contexts/page"
 import { toast } from "sonner"
 import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
-import { generateSpeech } from "@/utils/tts";
 
 interface MessageBubbleMenubarProps {
   message: Message
